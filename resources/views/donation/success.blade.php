@@ -156,4 +156,13 @@
             }
         }
     </style>
+
+    @if(config('analytics.ga_enabled') && config('analytics.ga_track_donations') && $amount)
+    <script>
+        // Track successful donation
+        if (typeof gaTrackDonation === 'function') {
+            gaTrackDonation({{ $amount['value'] }}, '{{ $amount['currency_code'] }}');
+        }
+    </script>
+    @endif
 </x-theme::layout>

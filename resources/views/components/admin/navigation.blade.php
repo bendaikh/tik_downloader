@@ -40,7 +40,7 @@
     <x-admin.nav-dropdown 
         text="Settings" 
         icon="admin.icon.mini.cog"
-        :open="request()->routeIs('admin.settings*') || request()->routeIs('admin.ai-integration*') || request()->routeIs('admin.payment-settings*')"
+        :open="request()->routeIs('admin.settings*') || request()->routeIs('admin.ai-integration*') || request()->routeIs('admin.payment-settings*') || request()->routeIs('admin.google-analytics*')"
     >
         <x-admin.nav-sub-link
             href="{{route('admin.settings')}}"
@@ -49,6 +49,10 @@
         <x-admin.nav-sub-link
             href="{{route('admin.payment-settings')}}"
             text="Payment Settings"
+        />
+        <x-admin.nav-sub-link
+            href="{{route('admin.google-analytics')}}"
+            text="Google Analytics"
         />
         <x-admin.nav-sub-link
             href="{{route('admin.ai-integration')}}"

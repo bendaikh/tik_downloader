@@ -67,14 +67,28 @@ class DonationController extends Controller
             $capture = $this->paypalService->capturePayment($orderId);
             
             if ($capture) {
+                $amount = $capture['purchase_units'][0]['payments']['captures'][0]['amount'] ?? null;
+                
                 Log::info('Donation successful', [
                     'order_id' => $orderId,
-                    'amount' => $capture['purchase_units'][0]['payments']['captures'][0]['amount'] ?? null
+                    'amount' => $amount
                 ]);
+
+                // Track donation event if Google Analytics is enabled
+                if (config('analytics.ga_enabled') && config('analytics.ga_track_donations') && $amount) {
+                    $gaService = app(\App\Service\GoogleAnalytics\GoogleAnalyticsService::class);
+                    if ($gaService->isEnabled()) {
+                        Log::info('Donation tracked in Google Analytics', [
+                            'order_id' => $orderId,
+                            'amount' => $amount['value'],
+                            'currency' => $amount['currency_code']
+                        ]);
+                    }
+                }
                 
                 return view('donation.success', [
                     'order_id' => $orderId,
-                    'amount' => $capture['purchase_units'][0]['payments']['captures'][0]['amount'] ?? null
+                    'amount' => $amount
                 ]);
             }
         }

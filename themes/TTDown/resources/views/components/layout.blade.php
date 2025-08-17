@@ -20,6 +20,11 @@
     <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
     
     @stack('head')
+    
+    @php
+        $gaService = app(\App\Service\GoogleAnalytics\GoogleAnalyticsService::class);
+    @endphp
+    {!! $gaService->getTrackingCode() !!}
 </head>
 <body>
     <!-- Header -->

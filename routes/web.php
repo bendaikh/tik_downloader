@@ -54,6 +54,11 @@ Route::withoutMiddleware(['locale'])->group(function () {
             Route::post('/payment-settings', [\App\Http\Controllers\Admin\PaymentSettingsController::class, 'update'])
                 ->name('payment-settings.update');
 
+            Route::get("/google-analytics", [\App\Http\Controllers\Admin\GoogleAnalyticsController::class, 'index'])
+                ->name('google-analytics');
+            Route::post('/google-analytics', [\App\Http\Controllers\Admin\GoogleAnalyticsController::class, 'update'])
+                ->name('google-analytics.update');
+
             Route::get("/ai-integration", [\App\Http\Controllers\Admin\AIIntegrationController::class, 'index'])
                 ->name('ai-integration');
             Route::post('/ai-integration', [\App\Http\Controllers\Admin\AIIntegrationController::class, 'update'])

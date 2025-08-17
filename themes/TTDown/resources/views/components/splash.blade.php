@@ -121,7 +121,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 <a href="${downloadUrl}" 
                    style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: var(--gradient-accent); color: white; text-decoration: none; border-radius: 8px; font-weight: 500; transition: transform 0.3s ease; cursor: pointer;"
                    onmouseover="this.style.transform='scale(1.02)'"
-                   onmouseout="this.style.transform='scale(1)'">
+                   onmouseout="this.style.transform='scale(1)'"
+                   onclick="trackDownload('hd_video', 'HD Video Without Watermark')">
                     <span>📹 Download HD Video Without Watermark${size}</span>
                     <span>⬇️</span>
                 </a>
@@ -136,7 +137,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 <a href="${audioDownloadUrl}" 
                    style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: var(--accent-blue); color: white; text-decoration: none; border-radius: 8px; font-weight: 500; transition: transform 0.3s ease; cursor: pointer;"
                    onmouseover="this.style.transform='scale(1.02)'"
-                   onmouseout="this.style.transform='scale(1)'">
+                   onmouseout="this.style.transform='scale(1)'"
+                   onclick="trackDownload('mp3_audio', 'MP3 Audio')">
                     <span>🎵 Download MP3 Audio</span>
                     <span>⬇️</span>
                 </a>
@@ -159,7 +161,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 <a href="${watermarkDownloadUrl}" 
                    style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: var(--border-color); color: var(--text-primary); text-decoration: none; border-radius: 8px; font-weight: 500; transition: transform 0.3s ease; cursor: pointer;"
                    onmouseover="this.style.transform='scale(1.02)'"
-                   onmouseout="this.style.transform='scale(1)'">
+                   onmouseout="this.style.transform='scale(1)'"
+                   onclick="trackDownload('watermark_video', 'Video with Watermark')">
                     <span>💧 Download with Watermark</span>
                     <span>⬇️</span>
                 </a>
@@ -175,6 +178,23 @@ document.addEventListener('DOMContentLoaded', function() {
     function showError(message) {
         errorText.textContent = message;
         errorMessage.style.display = 'block';
+    }
+    
+    // Track download events
+    function trackDownload(type, label) {
+        if (typeof gaTrackDownload === 'function') {
+            gaTrackDownload(window.location.href, label);
+        }
+        
+        // Also track as custom event
+        if (typeof gaTrackEvent === 'function') {
+            gaTrackEvent('download', {
+                'event_category': 'video',
+                'event_label': label,
+                'download_type': type,
+                'value': 1
+            });
+        }
     }
 });
 </script>
