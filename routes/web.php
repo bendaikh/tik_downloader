@@ -59,6 +59,13 @@ Route::withoutMiddleware(['locale'])->group(function () {
             Route::post('/google-analytics', [\App\Http\Controllers\Admin\GoogleAnalyticsController::class, 'update'])
                 ->name('google-analytics.update');
 
+            Route::get("/google-search-console", [\App\Http\Controllers\Admin\GoogleSearchConsoleController::class, 'index'])
+                ->name('google-search-console');
+            Route::post('/google-search-console', [\App\Http\Controllers\Admin\GoogleSearchConsoleController::class, 'update'])
+                ->name('google-search-console.update');
+            Route::post('/google-search-console/generate-sitemap', [\App\Http\Controllers\Admin\GoogleSearchConsoleController::class, 'generateSitemap'])
+                ->name('google-search-console.generate-sitemap');
+
             Route::get("/ai-integration", [\App\Http\Controllers\Admin\AIIntegrationController::class, 'index'])
                 ->name('ai-integration');
             Route::post('/ai-integration', [\App\Http\Controllers\Admin\AIIntegrationController::class, 'update'])

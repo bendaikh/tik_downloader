@@ -25,6 +25,10 @@
         $gaService = app(\App\Service\GoogleAnalytics\GoogleAnalyticsService::class);
     @endphp
     {!! $gaService->getTrackingCode() !!}
+    
+    @if(config('search_console.gsc_enabled') && config('search_console.gsc_verification_method') === 'meta_tag' && config('search_console.gsc_meta_tag'))
+        {!! config('search_console.gsc_meta_tag') !!}
+    @endif
 </head>
 <body>
     <!-- Header -->
