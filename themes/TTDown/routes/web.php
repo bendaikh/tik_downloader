@@ -20,7 +20,8 @@ Route::middleware(['web', 'theme'])->group(function () {
     Route::view('/tos', "theme::tos")->name('tos');
     Route::view('/privacy', "theme::privacy")->name('privacy');
     
-    // Blog post route - outside localization group
+    // Blog routes - outside localization group
+    Route::get('/blog', fn() => view("theme::blog"))->name('blog.index');
     Route::get('/blog/{slug}', \Themes\TTDown\Controllers\BlogPostController::class)->name('blog.show');
 });
 
