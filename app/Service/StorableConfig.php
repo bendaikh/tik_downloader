@@ -19,7 +19,7 @@ class StorableConfig
 
     // List of config namespaces that are allowed to be persisted to storage.
     // Added `services.openai` for OpenAI credentials and `ai` for general AI feature flags.
-    const ALLOWED_CONFIGS = ['app', 'services.openai', 'ai'];
+    const ALLOWED_CONFIGS = ['app', 'services.openai', 'ai', 'payments'];
 
     /**
      * @throws BindingResolutionException

@@ -19,6 +19,13 @@ Route::withoutMiddleware(['locale'])->group(function () {
     Route::get("download", \App\Http\Controllers\DownloadFileController::class)
         ->name("download");
 
+    // Donation routes
+    Route::get('/donate', [\App\Http\Controllers\DonationController::class, 'show'])->name('donation.show');
+    Route::post('/donate/create-order', [\App\Http\Controllers\DonationController::class, 'createOrder'])->name('donation.create-order');
+    Route::get('/donate/success', [\App\Http\Controllers\DonationController::class, 'success'])->name('donation.success');
+    Route::get('/donate/cancel', [\App\Http\Controllers\DonationController::class, 'cancel'])->name('donation.cancel');
+    Route::post('/donate/webhook', [\App\Http\Controllers\DonationController::class, 'webhook'])->name('donation.webhook');
+
     Route::redirect('/admin', '/admin/settings');
 
     Route::prefix('/admin')
@@ -41,6 +48,11 @@ Route::withoutMiddleware(['locale'])->group(function () {
                 ->name('settings');
             Route::post('/settings', [\App\Http\Controllers\Admin\SettingsController::class, 'update'])
                 ->name('settings.update');
+
+            Route::get("/payment-settings", [\App\Http\Controllers\Admin\PaymentSettingsController::class, 'index'])
+                ->name('payment-settings');
+            Route::post('/payment-settings', [\App\Http\Controllers\Admin\PaymentSettingsController::class, 'update'])
+                ->name('payment-settings.update');
 
             Route::get("/ai-integration", [\App\Http\Controllers\Admin\AIIntegrationController::class, 'index'])
                 ->name('ai-integration');

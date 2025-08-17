@@ -35,7 +35,9 @@
                     <a href="{{ route('faq') }}" class="nav-link">FAQ</a>
                     <a href="#" class="nav-link">Blog</a>
                     <a href="#" class="nav-link">🌐 English</a>
-                    <a href="#" class="donate-btn">💖 Donate</a>
+                    @if(config('payments.donation_enabled', false))
+                        <a href="{{ route('donation.show') }}" class="donate-btn">💖 Donate</a>
+                    @endif
                 </nav>
             </div>
         </div>

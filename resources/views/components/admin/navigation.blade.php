@@ -40,11 +40,15 @@
     <x-admin.nav-dropdown 
         text="Settings" 
         icon="admin.icon.mini.cog"
-        :open="request()->routeIs('admin.settings*') || request()->routeIs('admin.ai-integration*')"
+        :open="request()->routeIs('admin.settings*') || request()->routeIs('admin.ai-integration*') || request()->routeIs('admin.payment-settings*')"
     >
         <x-admin.nav-sub-link
             href="{{route('admin.settings')}}"
             text="General Settings"
+        />
+        <x-admin.nav-sub-link
+            href="{{route('admin.payment-settings')}}"
+            text="Payment Settings"
         />
         <x-admin.nav-sub-link
             href="{{route('admin.ai-integration')}}"
