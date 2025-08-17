@@ -1,5 +1,6 @@
 @php
-    $products = \App\Models\Product::active()->ordered()->limit(8)->get();
+    $products = \App\Models\Product::active()->ordered()->limit(3)->get();
+    $totalProducts = \App\Models\Product::active()->count();
 @endphp
 
 @if($products->count() > 0)
@@ -23,7 +24,7 @@
                         {{ $product->name }}
                     </h3>
                     <p class="product-description" style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1rem; line-height: 1.5;">
-                        {{ Str::limit($product->description, 80) }}
+                        {{ \Illuminate\Support\Str::limit($product->description, 80) }}
                     </p>
                     
                     @if($product->price)
@@ -41,6 +42,17 @@
             </div>
             @endforeach
         </div>
+        
+        @if($totalProducts > 3)
+        <div class="product-actions" style="text-align: center; margin-top: 3rem;">
+            <a href="/products" class="see-more-products-btn" style="display: inline-flex; align-items: center; gap: 0.5rem; background: var(--gradient-accent); color: white; padding: 1rem 2rem; border-radius: 50px; text-decoration: none; font-weight: 600; font-size: 1rem; transition: all 0.3s ease; border: none; cursor: pointer;">
+                <span>See All Products</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </a>
+        </div>
+        @endif
     </div>
 </section>
 @endif

@@ -610,6 +610,290 @@ body {
     font-size: 1.125rem;
 }
 
+/* Products Page Styles */
+.products-page {
+    padding: 2rem 0 4rem;
+    background: var(--primary-bg);
+    min-height: 100vh;
+}
+
+.products-hero {
+    text-align: center;
+    padding: 3rem 0;
+    margin-bottom: 3rem;
+}
+
+.products-hero-title {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.products-hero-subtitle {
+    font-size: 1.125rem;
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 2rem;
+    margin-bottom: 4rem;
+}
+
+.product-item-card {
+    background: var(--card-bg);
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.product-item-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    border-color: var(--accent-pink);
+}
+
+.product-item-image {
+    position: relative;
+    width: 100%;
+    height: 220px;
+    overflow: hidden;
+}
+
+.product-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.product-placeholder {
+    width: 100%;
+    height: 100%;
+    background: var(--gradient-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+}
+
+.product-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.product-item-card:hover .product-overlay {
+    opacity: 1;
+}
+
+.product-item-card:hover .product-image {
+    transform: scale(1.1);
+}
+
+.product-buy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--gradient-accent);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+}
+
+.product-buy-btn:hover {
+    transform: scale(1.05);
+    color: white;
+}
+
+.product-item-content {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    height: calc(100% - 220px);
+}
+
+.product-item-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
+.product-item-description {
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 1rem;
+    flex-grow: 1;
+}
+
+.product-item-price {
+    display: flex;
+    align-items: baseline;
+    gap: 0.25rem;
+    margin-bottom: 1rem;
+}
+
+.price-currency {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.price-amount {
+    color: var(--accent-pink);
+    font-weight: 700;
+    font-size: 1.25rem;
+}
+
+.product-item-footer {
+    margin-top: auto;
+}
+
+.product-item-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--accent-pink);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.875rem;
+    transition: color 0.3s ease;
+}
+
+.product-item-link:hover {
+    color: var(--accent-blue);
+}
+
+.product-item-link svg {
+    transition: transform 0.3s ease;
+}
+
+.product-item-card:hover .product-item-link svg {
+    transform: translateX(4px);
+}
+
+/* Products Pagination */
+.products-pagination {
+    display: flex;
+    justify-content: center;
+    margin-top: 3rem;
+}
+
+.products-pagination .pagination {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.products-pagination .page-item {
+    list-style: none;
+}
+
+.products-pagination .page-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.products-pagination .page-link:hover {
+    background: var(--accent-pink);
+    color: white;
+    border-color: var(--accent-pink);
+}
+
+.products-pagination .page-item.active .page-link {
+    background: var(--accent-pink);
+    color: white;
+    border-color: var(--accent-pink);
+}
+
+/* Products Empty State */
+.products-empty {
+    text-align: center;
+    padding: 4rem 0;
+}
+
+.products-empty-icon {
+    color: var(--text-muted);
+    margin-bottom: 2rem;
+}
+
+.products-empty-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+
+.products-empty-text {
+    color: var(--text-secondary);
+    font-size: 1.125rem;
+}
+
+/* See More Products Button */
+.see-more-products-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--gradient-accent);
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.see-more-products-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(255, 77, 109, 0.3);
+    color: white;
+}
+
+.see-more-products-btn svg {
+    transition: transform 0.3s ease;
+}
+
+.see-more-products-btn:hover svg {
+    transform: translateX(4px);
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .hero h1 {
@@ -668,5 +952,27 @@ body {
     .see-more-btn {
         width: 100%;
         justify-content: center;
+    }
+    
+    .see-more-products-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .products-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .product-item-card {
+        margin-bottom: 1rem;
+    }
+    
+    .products-hero-title {
+        font-size: 2rem;
+    }
+    
+    .products-hero-subtitle {
+        font-size: 1rem;
     }
 }

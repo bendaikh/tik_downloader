@@ -23,6 +23,9 @@ Route::middleware(['web', 'theme'])->group(function () {
     // Blog routes - outside localization group
     Route::get('/blog', fn() => view("theme::blog"))->name('blog.index');
     Route::get('/blog/{slug}', \Themes\TTDown\Controllers\BlogPostController::class)->name('blog.show');
+    
+    // Products routes - outside localization group
+    Route::get('/products', fn() => view("theme::products"))->name('products.index');
 });
 
 Route::localization()->middleware(['web', 'theme'])->group(function () {
