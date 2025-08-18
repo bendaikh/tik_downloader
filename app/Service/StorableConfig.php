@@ -19,7 +19,7 @@ class StorableConfig
 
     // List of config namespaces that are allowed to be persisted to storage.
     // Added `services.openai` for OpenAI credentials and `ai` for general AI feature flags.
-    const ALLOWED_CONFIGS = ['app', 'services.openai', 'ai', 'payments', 'analytics', 'search_console'];
+    const ALLOWED_CONFIGS = ['app', 'services.openai', 'ai', 'payments', 'analytics', 'search_console', 'seo'];
 
     /**
      * @throws BindingResolutionException
@@ -57,6 +57,11 @@ class StorableConfig
      */
     public function put(string $key, array $values): static
     {
+        // Only allow configs that are in the allowed list
+        if (!in_array($key, static::ALLOWED_CONFIGS)) {
+            return $this;
+        }
+
         $this->configs[$key] = array_merge(
             $this->configs[$key] ?? [],
             $values
@@ -113,6 +118,11 @@ class StorableConfig
     protected function write(): bool
     {
         foreach ($this->configs as $config => $values) {
+            // Only write configs that are in the allowed list
+            if (!in_array($config, static::ALLOWED_CONFIGS)) {
+                continue;
+            }
+            
             $file = storage_path("app/config/$config.json");
             $content = json_encode($values, JSON_PRETTY_PRINT);
             if(!file_exists($file)) touch($file);
