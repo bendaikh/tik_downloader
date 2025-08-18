@@ -122,5 +122,29 @@ Route::withoutMiddleware(['locale'])->group(function () {
                     'downloads_today' => $downloadsToday,
                 ]);
             })->name('analytics.live');
+
+            // Debug route for analytics
+            Route::get('/analytics/debug', function () {
+                $recentVisits = \App\Models\Visit::orderBy('created_at', 'desc')
+                    ->limit(10)
+                    ->get(['ip_address', 'country_code', 'country_name', 'created_at', 'user_agent']);
+                
+                $totalVisits = \App\Models\Visit::count();
+                $visitsWithCountry = \App\Models\Visit::whereNotNull('country_code')
+                    ->where('country_code', '!=', '')
+                    ->count();
+                
+                return response()->json([
+                    'total_visits' => $totalVisits,
+                    'visits_with_country' => $visitsWithCountry,
+                    'recent_visits' => $recentVisits,
+                    'server_ip' => request()->ip(),
+                    'headers' => [
+                        'CF-IPCountry' => request()->headers->get('CF-IPCountry'),
+                        'X-Forwarded-For' => request()->headers->get('X-Forwarded-For'),
+                        'User-Agent' => request()->headers->get('User-Agent'),
+                    ]
+                ]);
+            })->name('analytics.debug');
         });
 });

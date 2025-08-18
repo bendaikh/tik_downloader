@@ -119,6 +119,25 @@ class AnalyticsController extends Controller
             ->map(fn($r) => ['code' => $r->code, 'name' => $r->name, 'visitors' => (int) $r->visitors])
             ->all();
 
+        // Debug: Check what data we have
+        $totalVisits = Visit::whereBetween('created_at', [$startDate, $endDate])->count();
+        $visitsWithCountry = Visit::whereBetween('created_at', [$startDate, $endDate])
+            ->whereNotNull('country_code')
+            ->where('country_code', '!=', '')
+            ->count();
+        $sampleVisits = Visit::whereBetween('created_at', [$startDate, $endDate])
+            ->select('ip_address', 'country_code', 'country_name', 'created_at')
+            ->limit(5)
+            ->get();
+
+        // Add debug info to session for troubleshooting
+        session()->flash('debug_info', [
+            'total_visits' => $totalVisits,
+            'visits_with_country' => $visitsWithCountry,
+            'sample_visits' => $sampleVisits->toArray(),
+            'countries_found' => $countries
+        ]);
+
         // Devices
         $deviceCounts = Visit::whereBetween('created_at', [$startDate, $endDate])
             ->selectRaw('device_type, COUNT(*) as total')
