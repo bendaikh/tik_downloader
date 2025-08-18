@@ -2,7 +2,6 @@
 /public/build
 /public/hot
 /public/storage
-/public/assets
 /storage/*.key
 /release
 /release.zip
