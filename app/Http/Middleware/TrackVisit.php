@@ -67,6 +67,13 @@ class TrackVisit
                         $countryCode = $geoData['code'] ?? null;
                         $countryName = $geoData['name'] ?? null;
                     } else {
+                        // Fallback: Check if it's a known hosting provider IP
+                        $fallbackCountry = $this->getCountryFromIPRange($ip);
+                        if ($fallbackCountry) {
+                            $countryCode = $fallbackCountry['code'];
+                            $countryName = $fallbackCountry['name'];
+                        }
+                        
                         // Log when geolocation fails
                         \Log::info('IP geolocation failed', [
                             'ip' => $ip,
@@ -121,23 +128,114 @@ class TrackVisit
 
     private function getCountryFromIP(string $ip): ?array
     {
-        $context = stream_context_create([
-            'http' => [
-                'timeout' => 2.0,
-                'ignore_errors' => true,
-            ]
-        ]);
-        $url = "https://ipapi.co/{$ip}/json/";
-        $response = @file_get_contents($url, false, $context);
-        if ($response) {
-            $data = json_decode($response, true);
-            if (is_array($data) && isset($data['country_code'])) {
-                return [
-                    'code' => strtoupper((string) $data['country_code']),
-                    'name' => isset($data['country_name']) ? (string) $data['country_name'] : null,
-                ];
+        // Try multiple geolocation services
+        $services = [
+            'ipapi' => "https://ipapi.co/{$ip}/json/",
+            'ipinfo' => "https://ipinfo.io/{$ip}/json",
+            'freegeoip' => "https://freegeoip.app/json/{$ip}",
+        ];
+
+        foreach ($services as $service => $url) {
+            try {
+                $context = stream_context_create([
+                    'http' => [
+                        'timeout' => 3.0,
+                        'ignore_errors' => true,
+                        'user_agent' => 'Mozilla/5.0 (compatible; Analytics/1.0)',
+                    ]
+                ]);
+                
+                $response = @file_get_contents($url, false, $context);
+                
+                if ($response) {
+                    $data = json_decode($response, true);
+                    
+                    if (is_array($data)) {
+                        // Handle different response formats
+                        $countryCode = null;
+                        $countryName = null;
+                        
+                        switch ($service) {
+                            case 'ipapi':
+                                if (isset($data['country_code'])) {
+                                    $countryCode = strtoupper((string) $data['country_code']);
+                                    $countryName = isset($data['country_name']) ? (string) $data['country_name'] : null;
+                                }
+                                break;
+                            case 'ipinfo':
+                                if (isset($data['country'])) {
+                                    $countryCode = strtoupper((string) $data['country']);
+                                    $countryName = isset($data['region']) ? (string) $data['region'] : null;
+                                }
+                                break;
+                            case 'freegeoip':
+                                if (isset($data['country_code'])) {
+                                    $countryCode = strtoupper((string) $data['country_code']);
+                                    $countryName = isset($data['country_name']) ? (string) $data['country_name'] : null;
+                                }
+                                break;
+                        }
+                        
+                        if ($countryCode) {
+                            \Log::info("IP geolocation successful", [
+                                'ip' => $ip,
+                                'service' => $service,
+                                'country_code' => $countryCode,
+                                'country_name' => $countryName
+                            ]);
+                            
+                            return [
+                                'code' => $countryCode,
+                                'name' => $countryName,
+                            ];
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                \Log::warning("IP geolocation service failed", [
+                    'ip' => $ip,
+                    'service' => $service,
+                    'error' => $e->getMessage()
+                ]);
+                continue;
             }
         }
+        
+        \Log::warning("All IP geolocation services failed", ['ip' => $ip]);
+        return null;
+    }
+
+    private function getCountryFromIPRange(string $ip): ?array
+    {
+        // Simple IP range check for common hosting providers
+        $ipRanges = [
+            '160.177.' => ['code' => 'US', 'name' => 'United States'], // Your hosting provider
+            '192.168.' => ['code' => 'XX', 'name' => 'Private Network'],
+            '10.' => ['code' => 'XX', 'name' => 'Private Network'],
+            '172.16.' => ['code' => 'XX', 'name' => 'Private Network'],
+            '172.17.' => ['code' => 'XX', 'name' => 'Private Network'],
+            '172.18.' => ['code' => 'XX', 'name' => 'Private Network'],
+            '172.19.' => ['code' => 'XX', 'name' => 'Private Network'],
+            '172.20.' => ['code' => 'XX', 'name' => 'Private Network'],
+            '172.21.' => ['code' => 'XX', 'name' => 'Private Network'],
+            '172.22.' => ['code' => 'XX', 'name' => 'Private Network'],
+            '172.23.' => ['code' => 'XX', 'name' => 'Private Network'],
+            '172.24.' => ['code' => 'XX', 'name' => 'Private Network'],
+            '172.25.' => ['code' => 'XX', 'name' => 'Private Network'],
+            '172.26.' => ['code' => 'XX', 'name' => 'Private Network'],
+            '172.27.' => ['code' => 'XX', 'name' => 'Private Network'],
+            '172.28.' => ['code' => 'XX', 'name' => 'Private Network'],
+            '172.29.' => ['code' => 'XX', 'name' => 'Private Network'],
+            '172.30.' => ['code' => 'XX', 'name' => 'Private Network'],
+            '172.31.' => ['code' => 'XX', 'name' => 'Private Network'],
+        ];
+
+        foreach ($ipRanges as $range => $country) {
+            if (strpos($ip, $range) === 0) {
+                return $country;
+            }
+        }
+
         return null;
     }
 }
