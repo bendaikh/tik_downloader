@@ -8,6 +8,7 @@ use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\File;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 
@@ -139,5 +140,31 @@ class ThemeManager
         );
 
         $this->loadCurrentTheme();
+
+        // Immediately synchronise public assets so that the next page load uses the new theme.
+        $this->syncPublicAssets();
+    }
+
+    /**
+     * Ensure that public/theme-assets is linked or copied from the currently active theme.
+     */
+    protected function syncPublicAssets(): void
+    {
+        $publicAssetsPath = public_path('theme-assets');
+        $sourceAssetsPath = $this->currentTheme->resourcesPath('assets');
+
+        // Delete existing directory or link
+        if (file_exists($publicAssetsPath)) {
+            // Try unlink first (handles symlink/junction). Suppress warnings if not a link.
+            @unlink($publicAssetsPath);
+            if (file_exists($publicAssetsPath)) {
+                File::deleteDirectory($publicAssetsPath);
+            }
+        }
+
+        // Recreate
+        // On Windows, symlink creation often requires admin privileges and can silently fail.
+        // To be safe and predictable across environments, we always copy the assets directory.
+        File::copyDirectory($sourceAssetsPath, $publicAssetsPath);
     }
 }

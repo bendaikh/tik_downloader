@@ -6,7 +6,7 @@
         </div>
 
         @foreach($themes as $theme)
-            <divw
+            <div
                 @class(['theme', 'is-active'=> $theme->isActivated()]) style="--bg-image: url({{route('admin.appearance.theme.screenshot', $theme->id)}})">
                 <div class="screenshot"></div>
                 <div class="theme-content">

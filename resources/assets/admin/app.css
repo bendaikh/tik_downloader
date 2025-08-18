@@ -197,6 +197,72 @@ body, html {
     --ring-color: var(--color-primary-light-8);
 }
 
+/* Navigation Dropdown */
+.nav-dropdown {
+    display: flex;
+    flex-direction: column;
+}
+
+.nav-dropdown-toggle {
+    position: relative;
+    justify-content: space-between;
+    border: none;
+}
+
+.nav-dropdown-arrow {
+    transition: transform 200ms ease-in-out;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.nav-dropdown-arrow.rotate-180 {
+    transform: rotate(180deg);
+}
+
+.nav-dropdown-menu {
+    margin-left: 1.5rem;
+    padding-top: 0.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.nav-sub-link {
+    --nav-item-color: var(--color--75);
+    --nav-item-bg-color: transparent;
+    --ring-color: var(--color--10);
+    color: var(--nav-item-color);
+    background: var(--nav-item-bg-color);
+    font-weight: 400;
+    padding: 0.375rem 0.75rem;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    height: 32px;
+    line-height: 1.25;
+    font-size: 0.875rem;
+    text-decoration: none;
+    transition-property: color, background-color;
+    transition-duration: 200ms;
+    transition-timing-function: ease-in-out;
+}
+
+.nav-sub-link:where(:hover,:focus-visible) {
+    --nav-item-bg-color: hsla(0, 0%, 0%, .05);
+}
+
+.nav-sub-link:focus-visible {
+    outline: 2px solid var(--ring-color);
+    outline-offset: 1px;
+}
+
+.nav-sub-link.is-active {
+    --nav-item-color: var(--color-primary);
+    --nav-item-bg-color: var(--color-primary-light-9);
+    --ring-color: var(--color-primary-light-8);
+    font-weight: 600;
+}
+
 
 .content-card {
     padding: var(--padding-top, 1.75rem) var(--padding-x, 2.6875rem) var(--padding-bottom, 1.75rem);
@@ -654,4 +720,28 @@ body, html {
     font-size: 2rem;
     font-weight: 700;
     line-height: 1;
+}
+
+/* --------------------------------------------------------------------------
+   Fix misalignment of top-level dropdown items in the sidebar navigation
+   -------------------------------------------------------------------------- */
+.nav .nav-dropdown {
+    /* Ensure the dropdown container takes the full available width so its
+       toggle button starts at the same horizontal position as regular links */
+    width: 100%;
+}
+
+.nav .nav-dropdown-toggle {
+    /* Match the left-hand padding of regular top-level .nav-link items */
+    padding-left: 0.63rem;
+}
+
+/* Align content inside dropdown toggle similar to regular nav links */
+.nav .nav-dropdown-toggle {
+    justify-content: flex-start; /* place icon + label together */
+}
+
+/* Remove the 100% width on the label inside dropdown toggles to avoid extra gap */
+.nav .nav-dropdown-toggle span {
+    width: auto;
 }

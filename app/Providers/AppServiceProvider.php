@@ -40,5 +40,20 @@ class AppServiceProvider extends ServiceProvider
                 ], 200),
             ]);
         }
+
+        // Ensure generic /assets symbolic link (or directory) exists for admin panel and other static assets
+        $publicAssets = public_path('assets');
+        if (!file_exists($publicAssets)) {
+            $source = resource_path('assets');
+            try {
+                // Preferred: create symlink just like artisan storage:link would do
+                \Illuminate\Support\Facades\File::link($source, $publicAssets);
+            } catch (\Throwable $e) {
+                // Fallback: copy directory when symlinks are unavailable (e.g. shared hosting)
+                if (is_dir($source)) {
+                    \Illuminate\Support\Facades\File::copyDirectory($source, $publicAssets);
+                }
+            }
+        }
     }
 }

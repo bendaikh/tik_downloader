@@ -1,10 +1,8 @@
-/app/Service/TikTok/API.php
 /node_modules
 /public/build
 /public/hot
 /public/storage
 /public/assets
-/public/theme-assets
 /storage/*.key
 /release
 /release.zip

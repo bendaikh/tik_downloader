@@ -19,6 +19,13 @@ Route::withoutMiddleware(['locale'])->group(function () {
     Route::get("download", \App\Http\Controllers\DownloadFileController::class)
         ->name("download");
 
+    // Donation routes
+    Route::get('/donate', [\App\Http\Controllers\DonationController::class, 'show'])->name('donation.show');
+    Route::post('/donate/create-order', [\App\Http\Controllers\DonationController::class, 'createOrder'])->name('donation.create-order');
+    Route::get('/donate/success', [\App\Http\Controllers\DonationController::class, 'success'])->name('donation.success');
+    Route::get('/donate/cancel', [\App\Http\Controllers\DonationController::class, 'cancel'])->name('donation.cancel');
+    Route::post('/donate/webhook', [\App\Http\Controllers\DonationController::class, 'webhook'])->name('donation.webhook');
+
     Route::redirect('/admin', '/admin/settings');
 
     Route::prefix('/admin')
@@ -41,6 +48,28 @@ Route::withoutMiddleware(['locale'])->group(function () {
                 ->name('settings');
             Route::post('/settings', [\App\Http\Controllers\Admin\SettingsController::class, 'update'])
                 ->name('settings.update');
+
+            Route::get("/payment-settings", [\App\Http\Controllers\Admin\PaymentSettingsController::class, 'index'])
+                ->name('payment-settings');
+            Route::post('/payment-settings', [\App\Http\Controllers\Admin\PaymentSettingsController::class, 'update'])
+                ->name('payment-settings.update');
+
+            Route::get("/google-analytics", [\App\Http\Controllers\Admin\GoogleAnalyticsController::class, 'index'])
+                ->name('google-analytics');
+            Route::post('/google-analytics', [\App\Http\Controllers\Admin\GoogleAnalyticsController::class, 'update'])
+                ->name('google-analytics.update');
+
+            Route::get("/google-search-console", [\App\Http\Controllers\Admin\GoogleSearchConsoleController::class, 'index'])
+                ->name('google-search-console');
+            Route::post('/google-search-console', [\App\Http\Controllers\Admin\GoogleSearchConsoleController::class, 'update'])
+                ->name('google-search-console.update');
+            Route::post('/google-search-console/generate-sitemap', [\App\Http\Controllers\Admin\GoogleSearchConsoleController::class, 'generateSitemap'])
+                ->name('google-search-console.generate-sitemap');
+
+            Route::get("/ai-integration", [\App\Http\Controllers\Admin\AIIntegrationController::class, 'index'])
+                ->name('ai-integration');
+            Route::post('/ai-integration', [\App\Http\Controllers\Admin\AIIntegrationController::class, 'update'])
+                ->name('ai-integration.update');
 
             Route::get("/proxies", [\App\Http\Controllers\Admin\ProxyController::class, 'index'])
                 ->name('proxy');
@@ -67,5 +96,14 @@ Route::withoutMiddleware(['locale'])->group(function () {
             Route::get('/me', [\App\Http\Controllers\Admin\MeController::class, 'index'])
                 ->name('me');
             Route::post('/me', [\App\Http\Controllers\Admin\MeController::class, 'store']);
+
+            Route::resource('products', \App\Http\Controllers\Admin\ProductController::class);
+
+            // Blog routes
+            Route::resource('blogs', \App\Http\Controllers\Admin\BlogController::class);
+            Route::post('/blogs/generate-ai-content', [\App\Http\Controllers\Admin\BlogController::class, 'generateAiContent'])
+                ->name('blogs.generate-ai-content');
+            Route::post('/blogs/regenerate-content', [\App\Http\Controllers\Admin\BlogController::class, 'regenerateContent'])
+                ->name('blogs.regenerate-content');
         });
 });

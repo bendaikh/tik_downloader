@@ -22,6 +22,19 @@ class DownloadFileController extends Controller
 
         $filename = config("app.name") . '-' . time() . '.' . $extension;
 
+        // Track download event if Google Analytics is enabled
+        if (config('analytics.ga_enabled') && config('analytics.ga_track_downloads')) {
+            $gaService = app(\App\Service\GoogleAnalytics\GoogleAnalyticsService::class);
+            if ($gaService->isEnabled()) {
+                // Log download event (will be tracked via JavaScript)
+                \Log::info('Video download initiated', [
+                    'url' => $url,
+                    'extension' => $extension,
+                    'filename' => $filename
+                ]);
+            }
+        }
+
         // start a buffer before sending headers
         // some php env may not buffer by default
         if (!ob_get_level()) ob_start();
@@ -39,7 +52,7 @@ class DownloadFileController extends Controller
     {
         $ch = curl_init();
         $headers = array(
-            'Range: bytes=0-',
+            
         );
         $options = array(
             CURLOPT_URL => $url,
@@ -49,7 +62,7 @@ class DownloadFileController extends Controller
             CURLOPT_FOLLOWLOCATION => true,
             CURLINFO_HEADER_OUT => true,
             CURLOPT_USERAGENT => 'okhttp',
-            CURLOPT_ENCODING => "utf-8",
+            CURLOPT_ENCODING => "",
             CURLOPT_AUTOREFERER => true,
             CURLOPT_REFERER => 'https://www.tiktok.com/',
             CURLOPT_CONNECTTIMEOUT => 600,
