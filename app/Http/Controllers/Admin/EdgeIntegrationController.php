@@ -33,13 +33,22 @@ class EdgeIntegrationController extends Controller
             'azure_application_insights_enabled' => 'boolean',
         ]);
 
+        // Extract verification code from meta tag if full tag was pasted
+        $verificationCode = $validated['bing_webmaster_verification'] ?? null;
+        if ($verificationCode && strpos($verificationCode, '<meta') !== false) {
+            // Extract content from meta tag
+            if (preg_match('/content="([^"]+)"/', $verificationCode, $matches)) {
+                $verificationCode = $matches[1];
+            }
+        }
+
         /** @var StorableConfig $storable */
         $storable = app('config.storable');
 
         // Save Microsoft services settings to config
         $storable->put('services.microsoft', [
             'bing_webmaster' => [
-                'verification_code' => $validated['bing_webmaster_verification'] ?? null,
+                'verification_code' => $verificationCode,
                 'enabled' => $validated['bing_webmaster_enabled'] ?? false,
             ],
             'clarity' => [

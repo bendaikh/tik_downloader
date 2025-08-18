@@ -10,7 +10,7 @@ class MicrosoftServicesService
     public function getBingWebmasterMetaTag(): ?string
     {
         if (config('services.microsoft.bing_webmaster.enabled') && config('services.microsoft.bing_webmaster.verification_code')) {
-            return '<meta name="msvalidate.01" content="' . config('services.microsoft.bing_webmaster.verification_code') . '" />';
+            return '<meta name="msvalidate.01" content="' . htmlspecialchars(config('services.microsoft.bing_webmaster.verification_code'), ENT_QUOTES, 'UTF-8') . '" />';
         }
         
         return null;
@@ -94,6 +94,9 @@ class MicrosoftServicesService
             $scripts[] = $aiScript;
         }
         
-        return implode("\n    ", $scripts);
+        $output = implode("\n    ", $scripts);
+        
+        // Ensure proper HTML output
+        return trim($output);
     }
 }

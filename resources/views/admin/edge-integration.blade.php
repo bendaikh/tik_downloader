@@ -27,7 +27,11 @@
                 <div class="form-element {{ $errors->has('bing_webmaster_verification') ? 'is-error' : '' }}">
                     <label for="bing_webmaster_verification">Verification Code</label>
                     <input type="text" id="bing_webmaster_verification" name="bing_webmaster_verification" value="{{ config('services.microsoft.bing_webmaster.verification_code') }}" placeholder="Enter your Bing Webmaster verification code">
-                    <small>Get this code from <a href="https://www.bing.com/webmasters" target="_blank">Bing Webmaster Tools</a></small>
+                    <small>
+                        <strong>Important:</strong> Enter only the verification code (e.g., A0554F7B2549B5B8BCC636A82B4008EC), 
+                        NOT the full meta tag. If you paste the full meta tag, it will be automatically extracted.
+                        <br>Get this code from <a href="https://www.bing.com/webmasters" target="_blank">Bing Webmaster Tools</a>
+                    </small>
                     @error('bing_webmaster_verification')
                         <div class="error">{{ $message }}</div>
                     @enderror
@@ -139,10 +143,13 @@
                             <li>Sign in with your Microsoft account</li>
                             <li>Click "Add a site" and enter your website URL: <code>{{ config('app.url') }}</code></li>
                             <li>Choose verification method (HTML tag, XML file, or DNS)</li>
-                            <li>Copy the verification code provided</li>
+                            <li>Copy the verification code provided (e.g., A0554F7B2549B5B8BCC636A82B4008EC)</li>
                             <li>Paste the code in the "Verification Code" field above</li>
                             <li>Save settings and verify your site</li>
                         </ol>
+                        <div class="note" style="margin-top: 10px; padding: 10px; background: #f0f8ff; border-left: 4px solid #007cba;">
+                            <strong>Note:</strong> You can paste either just the verification code or the full meta tag - the system will automatically extract the code for you.
+                        </div>
                     </div>
                     <div class="note">
                         <strong>Benefits:</strong> Track search performance, submit sitemaps, monitor crawl errors, and get SEO recommendations.
