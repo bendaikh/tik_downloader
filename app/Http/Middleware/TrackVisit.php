@@ -66,11 +66,41 @@ class TrackVisit
                     if ($geoData) {
                         $countryCode = $geoData['code'] ?? null;
                         $countryName = $geoData['name'] ?? null;
+                    } else {
+                        // Log when geolocation fails
+                        \Log::info('IP geolocation failed', [
+                            'ip' => $ip,
+                            'user_agent' => $userAgent,
+                            'url' => $request->url()
+                        ]);
                     }
                 } catch (\Throwable $e) {
-                    // ignore
+                    // Log geolocation errors
+                    \Log::error('IP geolocation error', [
+                        'ip' => $ip,
+                        'error' => $e->getMessage(),
+                        'url' => $request->url()
+                    ]);
                 }
+            } else {
+                // Log when IP is localhost
+                \Log::info('Skipping geolocation for localhost', [
+                    'ip' => $ip,
+                    'url' => $request->url()
+                ]);
             }
+        } else {
+            // Log when country code comes from headers
+            \Log::info('Country code from headers', [
+                'country_code' => $countryCode,
+                'ip' => $request->ip(),
+                'headers' => [
+                    'CF-IPCountry' => $request->headers->get('CF-IPCountry'),
+                    'X-Appengine-Country' => $request->headers->get('X-Appengine-Country'),
+                    'X-Geo-Country' => $request->headers->get('X-Geo-Country'),
+                    'X-Country-Code' => $request->headers->get('X-Country-Code'),
+                ]
+            ]);
         }
 
         if (is_string($countryCode)) {
