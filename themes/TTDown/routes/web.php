@@ -16,7 +16,7 @@ Route::get("download", [DownloadController::class, 'download'])
 
 Route::get("/sitemap.xml", SitemapController::class)->name('sitemap');
 
-Route::middleware(['web', 'theme'])->group(function () {
+Route::middleware(['web', 'theme', 'track'])->group(function () {
     Route::view('/tos', "theme::tos")->name('tos');
     Route::view('/privacy', "theme::privacy")->name('privacy');
     
@@ -28,7 +28,7 @@ Route::middleware(['web', 'theme'])->group(function () {
     Route::get('/products', fn() => view("theme::products"))->name('products.index');
 });
 
-Route::localization()->middleware(['web', 'theme'])->group(function () {
+Route::localization()->middleware(['web', 'theme', 'track'])->group(function () {
     Route::match(
         ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
         '/',

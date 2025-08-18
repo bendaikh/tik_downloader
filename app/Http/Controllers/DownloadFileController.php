@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Download;
 
 class DownloadFileController extends Controller
 {
@@ -40,7 +41,20 @@ class DownloadFileController extends Controller
         if (!ob_get_level()) ob_start();
 
         return response()->streamDownload(
-            fn() => $this->streamFileContent($url),
+            function () use ($url, $request) {
+                $bytes = $this->streamFileContent($url);
+                try {
+                    Download::create([
+                        'visitor_id' => $request->cookies->get('visitor_id'),
+                        'session_id' => $request->session()->getId(),
+                        'ip_address' => $request->ip(),
+                        'user_agent' => (string) $request->userAgent(),
+                        'video_id' => $request->get('video_id'),
+                        'type' => $request->get('type', 'video'),
+                        'bytes' => $bytes,
+                    ]);
+                } catch (\Throwable $e) {}
+            },
             $filename,
             array_filter([
                 'Content-Type' => 'application/octet-stream',
@@ -83,7 +97,17 @@ class DownloadFileController extends Controller
             return strlen($data);
         });
 
+        $downloaded = 0;
+        curl_setopt($ch, CURLOPT_WRITEFUNCTION, function ($curl, $data) use (&$downloaded) {
+            $downloaded += strlen($data);
+            echo $data;
+            ob_flush();
+            flush();
+            return strlen($data);
+        });
+
         curl_exec($ch);
         curl_close($ch);
+        return $downloaded;
     }
 }

@@ -44,6 +44,8 @@ Route::withoutMiddleware(['locale'])->group(function () {
         ->middleware('auth')
         ->as('admin.')
         ->group(function () {
+            Route::get('/analytics', [\App\Http\Controllers\Admin\AnalyticsController::class, 'index'])
+                ->name('analytics');
             Route::get("/settings", [\App\Http\Controllers\Admin\SettingsController::class, 'index'])
                 ->name('settings');
             Route::post('/settings', [\App\Http\Controllers\Admin\SettingsController::class, 'update'])
@@ -105,5 +107,20 @@ Route::withoutMiddleware(['locale'])->group(function () {
                 ->name('blogs.generate-ai-content');
             Route::post('/blogs/regenerate-content', [\App\Http\Controllers\Admin\BlogController::class, 'regenerateContent'])
                 ->name('blogs.regenerate-content');
+
+            // Live analytics endpoint
+            Route::get('/analytics/live', function () {
+                $now = now();
+                $activeSince = $now->copy()->subMinutes(5);
+                $liveUsers = \App\Models\Visit::where('created_at', '>=', $activeSince)
+                    ->distinct('visitor_id')->count('visitor_id');
+                $downloadsLast5m = \App\Models\Download::where('created_at', '>=', $activeSince)->count();
+                $downloadsToday = \App\Models\Download::whereDate('created_at', $now->toDateString())->count();
+                return response()->json([
+                    'live_users' => $liveUsers,
+                    'downloads_5m' => $downloadsLast5m,
+                    'downloads_today' => $downloadsToday,
+                ]);
+            })->name('analytics.live');
         });
 });

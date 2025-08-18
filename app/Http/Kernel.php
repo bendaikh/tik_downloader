@@ -38,6 +38,7 @@ class Kernel extends HttpKernel
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \App\Http\Middleware\TrackVisit::class,
         ],
         'theme' => [
             \App\Http\Middleware\EnsureAppIsInstalled::class,
@@ -70,6 +71,7 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'locale' => \App\Http\Middleware\Localization::class,
         'installed' => \App\Http\Middleware\EnsureAppIsInstalled::class,
+        'track' => \App\Http\Middleware\TrackVisit::class,
     ];
 
     public function __construct(Application $app, Router $router)
