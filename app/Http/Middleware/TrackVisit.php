@@ -50,9 +50,32 @@ class TrackVisit
             }
         }
 
+        // Prefer infra headers first
         $countryCode = $request->headers->get('CF-IPCountry')
+            ?? $request->headers->get('X-Appengine-Country')
+            ?? $request->headers->get('X-Geo-Country')
             ?? $request->headers->get('X-Country-Code');
         $countryName = null;
+
+        // If no country code from headers, try HTTPS IP geolocation (ipapi.co)
+        if (!$countryCode) {
+            $ip = $request->ip();
+            if ($ip && !in_array($ip, ['127.0.0.1', '::1', 'localhost'])) {
+                try {
+                    $geoData = $this->getCountryFromIP($ip);
+                    if ($geoData) {
+                        $countryCode = $geoData['code'] ?? null;
+                        $countryName = $geoData['name'] ?? null;
+                    }
+                } catch (\Throwable $e) {
+                    // ignore
+                }
+            }
+        }
+
+        if (is_string($countryCode)) {
+            $countryCode = strtoupper($countryCode);
+        }
 
         Visit::create([
             'visitor_id' => $visitorId,
@@ -64,6 +87,28 @@ class TrackVisit
             'device_type' => $deviceType,
             'browser' => $browser,
         ]);
+    }
+
+    private function getCountryFromIP(string $ip): ?array
+    {
+        $context = stream_context_create([
+            'http' => [
+                'timeout' => 2.0,
+                'ignore_errors' => true,
+            ]
+        ]);
+        $url = "https://ipapi.co/{$ip}/json/";
+        $response = @file_get_contents($url, false, $context);
+        if ($response) {
+            $data = json_decode($response, true);
+            if (is_array($data) && isset($data['country_code'])) {
+                return [
+                    'code' => strtoupper((string) $data['country_code']),
+                    'name' => isset($data['country_name']) ? (string) $data['country_name'] : null,
+                ];
+            }
+        }
+        return null;
     }
 }
 

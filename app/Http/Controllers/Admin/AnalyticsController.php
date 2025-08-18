@@ -109,7 +109,9 @@ class AnalyticsController extends Controller
 
         // Top countries
         $countries = Visit::whereBetween('created_at', [$startDate, $endDate])
-            ->selectRaw('COALESCE(country_code, "XX") as code, COALESCE(country_name, "Unknown") as name, COUNT(*) as visitors')
+            ->whereNotNull('country_code')
+            ->where('country_code', '!=', '')
+            ->selectRaw('country_code as code, COALESCE(country_name, country_code) as name, COUNT(*) as visitors')
             ->groupBy('code', 'name')
             ->orderByDesc('visitors')
             ->limit(5)
