@@ -108,6 +108,14 @@ Route::withoutMiddleware(['locale'])->group(function () {
             Route::post('/blogs/regenerate-content', [\App\Http\Controllers\Admin\BlogController::class, 'regenerateContent'])
                 ->name('blogs.regenerate-content');
 
+            // SEO Settings routes
+            Route::get('/seo-settings', [\App\Http\Controllers\Admin\SeoSettingsController::class, 'index'])
+                ->name('seo-settings');
+            Route::post('/seo-settings', [\App\Http\Controllers\Admin\SeoSettingsController::class, 'update'])
+                ->name('seo-settings.update');
+            Route::post('/seo-settings/generate-sitemap', [\App\Http\Controllers\Admin\SeoSettingsController::class, 'generateSitemap'])
+                ->name('seo-settings.generate-sitemap');
+
             // Live analytics endpoint
             Route::get('/analytics/live', function () {
                 $now = now();
@@ -147,4 +155,21 @@ Route::withoutMiddleware(['locale'])->group(function () {
                 ]);
             })->name('analytics.debug');
         });
+});
+
+// Robots.txt
+Route::get('/robots.txt', [\App\Http\Controllers\RobotsController::class, 'index']);
+
+// Sitemap
+Route::get('/sitemap.xml', function () {
+    if (config('seo.sitemap_enabled', false)) {
+        $seoService = app(\App\Service\SeoService::class);
+        $sitemap = $seoService->generateSitemap();
+        
+        return response($sitemap, 200, [
+            'Content-Type' => 'application/xml',
+        ]);
+    }
+    
+    abort(404);
 });

@@ -38,7 +38,9 @@ class Kernel extends HttpKernel
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \App\Http\Middleware\Localization::class,
             \App\Http\Middleware\TrackVisit::class,
+            \App\Http\Middleware\SeoOptimizationMiddleware::class,
         ],
         'theme' => [
             \App\Http\Middleware\EnsureAppIsInstalled::class,
