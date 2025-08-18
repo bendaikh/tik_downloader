@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Service\StorableConfig;
+use App\Service\MicrosoftServicesService;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 
@@ -15,6 +16,10 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton("config.storable", function($app) {
             return new StorableConfig($app);
+        });
+
+        $this->app->singleton(MicrosoftServicesService::class, function($app) {
+            return new MicrosoftServicesService();
         });
 
         $this->callAfterResolving('config', function($config, $app) {

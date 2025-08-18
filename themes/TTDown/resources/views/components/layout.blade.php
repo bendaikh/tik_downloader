@@ -29,6 +29,11 @@
     @if(config('search_console.gsc_enabled') && config('search_console.gsc_verification_method') === 'meta_tag' && config('search_console.gsc_meta_tag'))
         {!! config('search_console.gsc_meta_tag') !!}
     @endif
+    
+    @php
+        $microsoftService = app(\App\Service\MicrosoftServicesService::class);
+    @endphp
+    {!! $microsoftService->getAllScripts() !!}
 </head>
 <body>
     <!-- Header -->
