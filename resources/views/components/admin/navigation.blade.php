@@ -2,6 +2,11 @@
     <small>Menu</small>
     
     <x-admin.nav-link
+        href="{{route('admin.analytics')}}"
+        icon="admin.icon.mini.bar-chart"
+        text="Analytics"
+    />
+    <x-admin.nav-link
         href="{{route('admin.proxy')}}"
         icon="admin.icon.mini.bolt"
         text="Configure Proxies"

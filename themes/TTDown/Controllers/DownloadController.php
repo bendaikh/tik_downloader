@@ -3,6 +3,7 @@
 namespace Themes\TTDown\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\Download;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Http;
@@ -54,10 +55,25 @@ class DownloadController extends Controller
                 $cleanFilename .= $extension;
             }
             
-            return response($response->body())
+            $body = $response->body();
+            $bytes = strlen($body);
+
+            try {
+                Download::create([
+                    'visitor_id' => $request->cookies->get('visitor_id'),
+                    'session_id' => $request->session()->getId(),
+                    'ip_address' => $request->ip(),
+                    'user_agent' => (string) $request->userAgent(),
+                    'video_id' => $request->query('video_id'),
+                    'type' => $type,
+                    'bytes' => $bytes,
+                ]);
+            } catch (\Throwable $e) {}
+
+            return response($body)
                 ->header('Content-Type', $contentType)
                 ->header('Content-Disposition', 'attachment; filename="' . $cleanFilename . '"')
-                ->header('Content-Length', strlen($response->body()))
+                ->header('Content-Length', $bytes)
                 ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
                 ->header('Pragma', 'no-cache')
                 ->header('Expires', '0');

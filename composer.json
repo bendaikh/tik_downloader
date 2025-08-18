@@ -12,6 +12,7 @@
         "ext-curl": "*",
         "ext-openssl": "*",
         "guzzlehttp/guzzle": "^7.2",
+        "matomo/device-detector": "^6.2",
         "laravel/framework": "^9.19",
         "laravel/tinker": "^2.7",
         "spatie/laravel-sitemap": "^6.2",
