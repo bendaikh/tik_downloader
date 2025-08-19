@@ -896,6 +896,14 @@ body {
 
 /* Responsive Design */
 @media (max-width: 768px) {
+    .header-content {
+        flex-direction: row;
+        gap: 1rem;
+    }
+    
+    .logo {
+        font-size: 1.25rem;
+    }
     .hero h1 {
         font-size: 2rem;
     }
@@ -920,7 +928,21 @@ body {
     }
     
     .nav {
+        display: flex;
+        flex-direction: row;
+        gap: 1rem;
+        align-items: center;
+        justify-content: flex-end;
+    }
+    
+    .nav-link {
         display: none;
+    }
+    
+    .donate-btn {
+        padding: 0.75rem 2rem;
+        font-size: 0.9rem;
+        white-space: nowrap;
     }
     
     .footer-content {
