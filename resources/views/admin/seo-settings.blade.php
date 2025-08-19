@@ -697,139 +697,7 @@
                 </div>
             </div>
 
-            <!-- Performance Section -->
-            <div class="settings-section">
-                <h3>Performance Optimization</h3>
-                
-                <div @class(['form-element', 'is-error'=> $errors->has('performance_enabled')])>
-                    <label class="checkbox-label">
-                        <input 
-                            type="checkbox" 
-                            name="performance_enabled" 
-                            value="1" 
-                            {{config('seo.performance_enabled') ? 'checked' : ''}}
-                        >
-                        <span>Enable Performance Optimization</span>
-                    </label>
-                    <small>Improve page load speed for better SEO rankings</small>
-                    @error('performance_enabled')
-                    <div class="error">{{$message}}</div>
-                    @enderror
-                </div>
 
-                <div class="performance-options">
-                    <div @class(['form-element', 'is-error'=> $errors->has('minify_html')])>
-                        <label class="checkbox-label">
-                            <input 
-                                type="checkbox" 
-                                name="minify_html" 
-                                value="1" 
-                                {{config('seo.minify_html') ? 'checked' : ''}}
-                            >
-                            <span>Minify HTML</span>
-                        </label>
-                    </div>
-
-                    <div @class(['form-element', 'is-error'=> $errors->has('minify_css')])>
-                        <label class="checkbox-label">
-                            <input 
-                                type="checkbox" 
-                                name="minify_css" 
-                                value="1" 
-                                {{config('seo.minify_css') ? 'checked' : ''}}
-                            >
-                            <span>Minify CSS</span>
-                        </label>
-                    </div>
-
-                    <div @class(['form-element', 'is-error'=> $errors->has('minify_js')])>
-                        <label class="checkbox-label">
-                            <input 
-                                type="checkbox" 
-                                name="minify_js" 
-                                value="1" 
-                                {{config('seo.minify_js') ? 'checked' : ''}}
-                            >
-                            <span>Minify JavaScript</span>
-                        </label>
-                    </div>
-
-                    <div @class(['form-element', 'is-error'=> $errors->has('enable_gzip')])>
-                        <label class="checkbox-label">
-                            <input 
-                                type="checkbox" 
-                                name="enable_gzip" 
-                                value="1" 
-                                {{config('seo.enable_gzip') ? 'checked' : ''}}
-                            >
-                            <span>Enable Gzip Compression</span>
-                        </label>
-                    </div>
-
-                    <div @class(['form-element', 'is-error'=> $errors->has('enable_browser_caching')])>
-                        <label class="checkbox-label">
-                            <input 
-                                type="checkbox" 
-                                name="enable_browser_caching" 
-                                value="1" 
-                                {{config('seo.enable_browser_caching') ? 'checked' : ''}}
-                            >
-                            <span>Enable Browser Caching</span>
-                        </label>
-                    </div>
-
-                    <div @class(['form-element', 'is-error'=> $errors->has('cache_duration')])>
-                        <label for="cache_duration">Cache Duration (seconds)</label>
-                        <input 
-                            type="number" 
-                            id="cache_duration" 
-                            name="cache_duration" 
-                            value="{{config('seo.cache_duration', '86400')}}"
-                            min="1"
-                        >
-                        <small>Default: 86400 (24 hours)</small>
-                        @error('cache_duration')
-                        <div class="error">{{$message}}</div>
-                        @enderror
-                    </div>
-
-                    <div @class(['form-element', 'is-error'=> $errors->has('lazy_loading_enabled')])>
-                        <label class="checkbox-label">
-                            <input 
-                                type="checkbox" 
-                                name="lazy_loading_enabled" 
-                                value="1" 
-                                {{config('seo.lazy_loading_enabled') ? 'checked' : ''}}
-                            >
-                            <span>Enable Lazy Loading for Images</span>
-                        </label>
-                    </div>
-
-                    <div @class(['form-element', 'is-error'=> $errors->has('image_optimization_enabled')])>
-                        <label class="checkbox-label">
-                            <input 
-                                type="checkbox" 
-                                name="image_optimization_enabled" 
-                                value="1" 
-                                {{config('seo.image_optimization_enabled') ? 'checked' : ''}}
-                            >
-                            <span>Enable Image Optimization</span>
-                        </label>
-                    </div>
-
-                    <div @class(['form-element', 'is-error'=> $errors->has('webp_conversion_enabled')])>
-                        <label class="checkbox-label">
-                            <input 
-                                type="checkbox" 
-                                name="webp_conversion_enabled" 
-                                value="1" 
-                                {{config('seo.webp_conversion_enabled') ? 'checked' : ''}}
-                            >
-                            <span>Enable WebP Conversion</span>
-                        </label>
-                    </div>
-                </div>
-            </div>
 
             @push('header')
                 <button class="button is-primary" type="submit" form="seoSettingsForm">Save SEO Settings</button>
@@ -885,7 +753,7 @@
             gap: 1rem;
         }
 
-        .schema-options, .performance-options {
+        .schema-options {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 0.5rem;
