@@ -68,6 +68,11 @@ Route::withoutMiddleware(['locale'])->group(function () {
             Route::post('/google-search-console/generate-sitemap', [\App\Http\Controllers\Admin\GoogleSearchConsoleController::class, 'generateSitemap'])
                 ->name('google-search-console.generate-sitemap');
 
+            Route::get("/safari", [\App\Http\Controllers\Admin\SafariController::class, 'index'])
+                ->name('safari');
+            Route::post('/safari', [\App\Http\Controllers\Admin\SafariController::class, 'update'])
+                ->name('safari.update');
+
             Route::get("/ai-integration", [\App\Http\Controllers\Admin\AIIntegrationController::class, 'index'])
                 ->name('ai-integration');
             Route::post('/ai-integration', [\App\Http\Controllers\Admin\AIIntegrationController::class, 'update'])

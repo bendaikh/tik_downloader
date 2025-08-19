@@ -23,8 +23,10 @@
     
     @php
         $gaService = app(\App\Service\GoogleAnalytics\GoogleAnalyticsService::class);
+        $safariService = app(\App\Service\Safari\SafariService::class);
     @endphp
     {!! $gaService->getTrackingCode() !!}
+    {!! $safariService->getTrackingCode() !!}
     
     @if(config('search_console.gsc_enabled') && config('search_console.gsc_verification_method') === 'meta_tag' && config('search_console.gsc_meta_tag'))
         {!! config('search_console.gsc_meta_tag') !!}

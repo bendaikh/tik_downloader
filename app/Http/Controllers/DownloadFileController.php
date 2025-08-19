@@ -36,6 +36,19 @@ class DownloadFileController extends Controller
             }
         }
 
+        // Track download event if Safari Analytics is enabled
+        if (config('safari.enabled') && config('safari.track_downloads')) {
+            $safariService = app(\App\Service\Safari\SafariService::class);
+            if ($safariService->isEnabled()) {
+                // Log download event (will be tracked via JavaScript)
+                \Log::info('Safari Analytics: Video download initiated', [
+                    'url' => $url,
+                    'extension' => $extension,
+                    'filename' => $filename
+                ]);
+            }
+        }
+
         // start a buffer before sending headers
         // some php env may not buffer by default
         if (!ob_get_level()) ob_start();
