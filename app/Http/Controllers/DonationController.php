@@ -85,6 +85,18 @@ class DonationController extends Controller
                         ]);
                     }
                 }
+
+                // Track donation event if Safari Analytics is enabled
+                if (config('safari.enabled') && config('safari.track_donations') && $amount) {
+                    $safariService = app(\App\Service\Safari\SafariService::class);
+                    if ($safariService->isEnabled()) {
+                        Log::info('Donation tracked in Safari Analytics', [
+                            'order_id' => $orderId,
+                            'amount' => $amount['value'],
+                            'currency' => $amount['currency_code']
+                        ]);
+                    }
+                }
                 
                 return view('donation.success', [
                     'order_id' => $orderId,

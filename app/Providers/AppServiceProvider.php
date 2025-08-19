@@ -22,6 +22,10 @@ class AppServiceProvider extends ServiceProvider
             return new MicrosoftServicesService();
         });
 
+        $this->app->singleton(\App\Service\Safari\SafariService::class, function($app) {
+            return new \App\Service\Safari\SafariService();
+        });
+
         $this->callAfterResolving('config', function($config, $app) {
             $app->make("config.storable")->merge($config);
         });
