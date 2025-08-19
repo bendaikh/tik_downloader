@@ -1,11 +1,4 @@
 <x-admin.layout title="Settings">
-    <x-slot:banner>
-        <div class="setting-cards">
-            <x-admin.card.license-status/>
-            <x-admin.card.license-usage/>
-            <x-admin.card.license-reset/>
-        </div>
-    </x-slot:banner>
 
     <div class="content-card card">
         <div class="heading">
