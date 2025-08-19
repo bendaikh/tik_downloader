@@ -13,8 +13,9 @@
         >
             @csrf
             <div @class(['form-element', 'is-required', 'is-error'=> $errors->has('name')])>
-                <label for="name">Site Name</label>
+                <label for="name">App Name</label>
                 <input type="text" id="name" name="name" value="{{config('app.name')}}" required>
+                <small style="color: #64748b; margin-top: 0.5rem; display: block;">This name will be displayed as the logo on your landing page</small>
                 @error('name')
                 <div class="error">{{$message}}</div>
                 @enderror
