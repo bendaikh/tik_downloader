@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     
-    <title>{{ $title ?? 'TT Down - Download TikTok Videos Without Watermark' }}</title>
+    <title>{{ $title ?? config('app.name', 'TTDown') . ' - Download TikTok Videos Without Watermark' }}</title>
     <meta name="description" content="Download TikTok videos without watermark. Free, fast and easy TikTok video downloader. Save TikTok videos in HD quality.">
     
     <!-- Fonts -->
@@ -43,7 +43,7 @@
         <div class="container">
             <div class="header-content">
                 <a href="{{ route('home') }}" class="logo">
-                    TTDown
+                    {{ config('app.name', 'TTDown') }}
                 </a>
                 
                 <nav class="nav">
@@ -76,7 +76,7 @@
             <div style="margin-top: 2rem;">
                 <div class="footer-content">
                     <div class="footer-text">
-                        © {{ date('Y') }} TTDown. All rights reserved.
+                        © {{ date('Y') }} {{ config('app.name', 'TTDown') }}. All rights reserved.
                     </div>
                     
                     <div class="footer-links">
