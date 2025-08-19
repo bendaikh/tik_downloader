@@ -7,7 +7,7 @@
 
         @foreach($themes as $theme)
             <div
-                @class(['theme', 'is-active'=> $theme->isActivated()]) style="--bg-image: url({{route('admin.appearance.theme.screenshot', $theme->id)}})">
+                @class(['theme', 'is-active'=> $theme->isActivated()]) style="--bg-image: url({{route('admin.appearance.theme.screenshot', $theme->id)}}?v={{time()}})">
                 <div class="screenshot"></div>
                 <div class="theme-content">
                     <h3>{{$theme->name}} <small>v{{$theme->version}}</small></h3>
@@ -27,7 +27,7 @@
                         @endif
                     </div>
                 </div>
-            </divw>
+            </div>
         @endforeach
     </div>
 </x-admin.layout>
