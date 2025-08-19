@@ -11,7 +11,7 @@
             <p>The ultimate tool for downloading TikTok videos without watermarks.</p>
             
             <div class="download-form">
-                <form id="downloadForm" method="POST" action="{{ route('download') }}">
+                <form id="downloadForm" action="{{ route('fetch') }}" method="POST">
                     @csrf
                     <div class="form-group">
                         <input type="url" 
@@ -22,7 +22,7 @@
                                required
                                value="{{ old('url') }}">
                         <button type="button" class="btn btn-secondary" onclick="pasteFromClipboard()">Paste</button>
-                        <button type="submit" class="btn btn-primary">
+                        <button type="submit" class="btn btn-primary" id="downloadBtn">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
                             </svg>
@@ -30,6 +30,21 @@
                         </button>
                     </div>
                 </form>
+            </div>
+            
+            <!-- Download Results -->
+            <div id="downloadResults" style="display: none; margin-top: 2rem;">
+                <div class="download-card">
+                    <div id="videoInfo" style="margin-bottom: 1.5rem;"></div>
+                    <div id="downloadLinks"></div>
+                </div>
+            </div>
+            
+            <!-- Error Message -->
+            <div id="errorMessage" style="display: none; margin-top: 1rem;">
+                <div class="error-card">
+                    <span id="errorText"></span>
+                </div>
             </div>
         </div>
     </section>
@@ -99,41 +114,37 @@
                 
                 <div class="step-card">
                     <div class="step-number blue">3</div>
-                    <h3>Download</h3>
-                    <p>Paste the link above and click download to save your video.</p>
+                    <h3>Paste and download</h3>
+                    <p>Paste the link above and click download to get your video.</p>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Products Section -->
-    @if($products && count($products) > 0)
+    @if($products->count() > 0)
     <section class="products">
         <div class="container">
             <div class="section-title">
-                <h2>Our Affiliate Products</h2>
-                <p>Discover amazing products that we recommend and trust.</p>
+                <h2>Recommended Products</h2>
+                <p>These are products we personally use and recommend.</p>
             </div>
             
             <div class="products-grid">
                 @foreach($products->take(3) as $product)
-                <div class="product-card">
-                    <div class="product-header {{ $loop->index === 0 ? 'primary' : ($loop->index === 1 ? 'purple' : 'blue') }}">
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                        </svg>
+                    <div class="product-card">
+                        <div class="product-header primary">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            </svg>
+                        </div>
+                        <div class="product-content">
+                            <h3 class="product-title">{{ $product->title }}</h3>
+                            <p class="product-description">{{ $product->description }}</p>
+                            <div class="product-price">{{ $product->price }}</div>
+                            <a href="{{ $product->affiliate_link }}" target="_blank" class="btn btn-primary product-btn">Buy Now</a>
+                        </div>
                     </div>
-                    <div class="product-content">
-                        <h3 class="product-title">{{ $product->title }}</h3>
-                        <p class="product-description">{{ Str::limit($product->description, 100) }}</p>
-                        @if($product->price)
-                        <div class="product-price">USD ${{ number_format($product->price, 2) }}</div>
-                        @endif
-                        <a href="{{ $product->affiliate_url }}" target="_blank" class="btn btn-primary product-btn">
-                            Buy Now
-                        </a>
-                    </div>
-                </div>
                 @endforeach
             </div>
             
@@ -147,7 +158,7 @@
     @endif
 
     <!-- Blog Section -->
-    @if($blogPosts && count($blogPosts) > 0)
+    @if($blogPosts->count() > 0)
     <section class="blog">
         <div class="container">
             <div class="section-title">
@@ -156,14 +167,18 @@
             </div>
             
             <div class="blog-grid">
-                @foreach($blogPosts->take(3) as $post)
-                <div class="blog-card">
-                    <h3 class="blog-title">{{ $post->title }}</h3>
-                    <p class="blog-excerpt">{{ Str::limit($post->excerpt, 150) }}</p>
-                    <a href="{{ route('blog-post', $post->slug) }}" class="blog-link">
-                        Read More →
-                    </a>
-                </div>
+                @foreach($blogPosts as $post)
+                    <div class="blog-card">
+                        <h3 class="blog-title">{{ $post->title }}</h3>
+                        <p class="blog-excerpt">{{ $post->excerpt ?? Str::limit($post->content, 150) }}</p>
+                        <div class="blog-meta">
+                            <span class="blog-date">{{ $post->created_at->format('F j, Y') }}</span>
+                            @if($post->author)
+                                <span class="blog-author">by {{ is_string($post->author) ? $post->author : $post->author->name ?? 'Admin' }}</span>
+                            @endif
+                        </div>
+                        <a href="{{ route('blog-post', $post->slug) }}" class="blog-link">Read More →</a>
+                    </div>
                 @endforeach
             </div>
             
@@ -179,59 +194,286 @@
 
 @push('scripts')
 <script>
-    // Paste from clipboard functionality
-    async function pasteFromClipboard() {
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('downloadForm');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const downloadResults = document.getElementById('downloadResults');
+    const errorMessage = document.getElementById('errorMessage');
+    const videoInfo = document.getElementById('videoInfo');
+    const downloadLinks = document.getElementById('downloadLinks');
+    const errorText = document.getElementById('errorText');
+    
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Reset previous results
+        downloadResults.style.display = 'none';
+        errorMessage.style.display = 'none';
+        
+        // Show loading state
+        downloadBtn.disabled = true;
+        downloadBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg> Processing...';
+        
         try {
-            const text = await navigator.clipboard.readText();
-            document.getElementById('tiktokUrl').value = text;
-        } catch (err) {
-            console.error('Failed to read clipboard contents: ', err);
-            // Fallback: focus the input and show a message
-            document.getElementById('tiktokUrl').focus();
-            alert('Please paste the TikTok URL manually (Ctrl+V)');
-        }
-    }
-
-    // Form submission with loading state
-    document.getElementById('downloadForm').addEventListener('submit', function(e) {
-        const submitBtn = this.querySelector('button[type="submit"]');
-        const originalText = submitBtn.innerHTML;
-        
-        // Add loading state
-        submitBtn.innerHTML = '<div class="spinner"></div> Downloading...';
-        submitBtn.disabled = true;
-        submitBtn.classList.add('loading');
-        
-        // Remove loading state after 5 seconds (fallback)
-        setTimeout(() => {
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
-            submitBtn.classList.remove('loading');
-        }, 5000);
-    });
-
-    // Auto-detect TikTok URLs in clipboard
-    document.getElementById('tiktokUrl').addEventListener('paste', function(e) {
-        setTimeout(() => {
-            const url = this.value;
-            if (url && !url.includes('tiktok.com')) {
-                this.classList.add('error');
-                this.setCustomValidity('Please enter a valid TikTok URL');
+            const formData = new FormData(form);
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success && data.video) {
+                showVideoResults(data.video);
             } else {
-                this.classList.remove('error');
-                this.setCustomValidity('');
+                showError(data.error || 'Failed to fetch video. Please check the URL and try again.');
             }
-        }, 100);
-    });
-
-    // Validate URL on input
-    document.getElementById('tiktokUrl').addEventListener('input', function() {
-        const url = this.value;
-        if (url && !url.includes('tiktok.com')) {
-            this.classList.add('error');
-        } else {
-            this.classList.remove('error');
+        } catch (error) {
+            showError('Network error. Please try again.');
+            console.error('Download error:', error);
+        } finally {
+            // Reset button state
+            downloadBtn.disabled = false;
+            downloadBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> Download';
         }
     });
+    
+    function showVideoResults(video) {
+        // Video info
+        videoInfo.innerHTML = `
+            <div class="video-info">
+                <img src="${video.cover?.url || ''}" alt="Video thumbnail" class="video-thumbnail" onerror="this.style.display='none'">
+                <div>
+                    <h3>${video.caption || 'TikTok Video'}</h3>
+                    <p>@${video.author?.username || 'Unknown'}</p>
+                </div>
+            </div>
+        `;
+        
+        // Download links
+        let linksHtml = '<div class="download-links">';
+        
+        // HD Video without watermark (primary download)
+        if (video.downloads && video.downloads.length > 0) {
+            const hdDownload = video.downloads[0]; // First download is usually HD
+            const size = hdDownload.size ? ` (${hdDownload.size})` : '';
+            const encodedUrl = btoa(hdDownload.url);
+            const downloadUrl = '/download?url=' + encodedUrl + '&extension=mp4&type=video';
+            
+            linksHtml += `
+                <a href="${downloadUrl}" class="download-link primary">
+                    <span>📹 Download HD Video Without Watermark${size}</span>
+                    <span>⬇️</span>
+                </a>
+            `;
+        }
+        
+        // MP3 Audio download
+        if (video.music && video.music.downloadUrl) {
+            const encodedAudioUrl = btoa(video.music.downloadUrl);
+            const audioDownloadUrl = '/download?url=' + encodedAudioUrl + '&extension=mp3&type=audio';
+            
+            linksHtml += `
+                <a href="${audioDownloadUrl}" class="download-link secondary">
+                    <span>🎵 Download MP3 Audio</span>
+                    <span>⬇️</span>
+                </a>
+            `;
+        } else if (video.downloads && video.downloads.length > 0) {
+            // Fallback: if no MP3 URL available, show that MP3 is not available
+            linksHtml += `
+                <div class="download-link disabled">
+                    <span>🎵 MP3 Audio (Not Available)</span>
+                    <span>❌</span>
+                </div>
+            `;
+        }
+        
+        // Add watermark download if available
+        if (video.watermark?.url) {
+            const encodedWatermarkUrl = btoa(video.watermark.url);
+            const watermarkDownloadUrl = '/download?url=' + encodedWatermarkUrl + '&extension=mp4&type=watermark';
+            
+            linksHtml += `
+                <a href="${watermarkDownloadUrl}" class="download-link watermark">
+                    <span>💧 Download with Watermark</span>
+                    <span>⬇️</span>
+                </a>
+            `;
+        }
+        
+        linksHtml += '</div>';
+        downloadLinks.innerHTML = linksHtml;
+        
+        downloadResults.style.display = 'block';
+    }
+    
+    function showError(message) {
+        errorText.textContent = message;
+        errorMessage.style.display = 'block';
+    }
+});
+
+// Paste from clipboard function
+function pasteFromClipboard() {
+    navigator.clipboard.readText().then(function(text) {
+        document.getElementById('tiktokUrl').value = text;
+    }).catch(function(err) {
+        console.error('Failed to read clipboard contents: ', err);
+    });
+}
 </script>
+@endpush
+
+@push('styles')
+<style>
+.download-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+    border-radius: var(--radius-xl);
+    padding: var(--spacing-lg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    max-width: 600px;
+    margin: 0 auto;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.error-card {
+    background: #dc2626;
+    color: white;
+    padding: var(--spacing-md);
+    border-radius: var(--radius-lg);
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.video-info {
+    display: flex;
+    gap: var(--spacing-md);
+    align-items: center;
+}
+
+.video-thumbnail {
+    width: 80px;
+    height: 80px;
+    border-radius: var(--radius-lg);
+    object-fit: cover;
+}
+
+.video-info h3 {
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
+    font-size: 1.125rem;
+}
+
+.video-info p {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.download-links {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.download-link {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md);
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.download-link::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.download-link:hover::before {
+    left: 100%;
+}
+
+.download-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.download-link.primary {
+    background: linear-gradient(135deg, #00d4aa 0%, #0099cc 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(0, 212, 170, 0.3);
+    border: 1px solid rgba(0, 212, 170, 0.2);
+}
+
+.download-link.secondary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.download-link.watermark {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    color: var(--text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+}
+
+.download-link.disabled {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.download-link.disabled:hover {
+    transform: none;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.mt-5 {
+    margin-top: 3rem;
+}
+
+.text-center .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 2rem;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: var(--radius-lg);
+    transition: all 0.3s ease;
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+.text-center .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 212, 170, 0.3);
+}
+</style>
 @endpush

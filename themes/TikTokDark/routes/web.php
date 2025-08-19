@@ -1,13 +1,14 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\DownloadController;
-use App\Http\Controllers\BlogController;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\FaqController;
-use App\Http\Controllers\TosController;
-use App\Http\Controllers\PrivacyController;
+use App\Http\Controllers\DownloadFileController;
+use Themes\TikTokDark\Controllers\BlogController;
+use Themes\TikTokDark\Controllers\ProductController;
+use Themes\TikTokDark\Controllers\FaqController;
+use Themes\TikTokDark\Controllers\TosController;
+use Themes\TikTokDark\Controllers\PrivacyController;
 use Themes\TikTokDark\Controllers\DonationController;
+use Themes\TikTokDark\Controllers\FetchController;
 
 // Home page
 Route::get('/', function () {
@@ -17,8 +18,11 @@ Route::get('/', function () {
     return view('TikTokDark::home', compact('products', 'blogPosts'));
 })->name('home');
 
+// TikTok video processing
+Route::post('/fetch', FetchController::class)->name('fetch');
+
 // Download functionality
-Route::post('/download', [DownloadController::class, 'download'])->name('download');
+Route::get('/download', DownloadFileController::class)->name('download');
 
 // Blog routes
 Route::get('/blog', [BlogController::class, 'index'])->name('blog');
