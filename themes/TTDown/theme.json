@@ -2,8 +2,8 @@
     "id": "TTDown",
     "name": "TTDown Theme",
     "description": "A modern dark theme for TikTok video downloader with gradient backgrounds and clean typography",
-    "author": "CodeSpikeX",
-    "preview": "screenshot.png",
+    "author": "zentix",
+    "preview": null,
     "version": "1.0.0",
     "locales": {
         "en": "English",

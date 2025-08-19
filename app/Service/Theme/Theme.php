@@ -75,8 +75,11 @@ class Theme extends Fluent
         return $this->manager->currentTheme() === $this;
     }
 
-    public function getScreenshot(): string
+    public function getScreenshot(): ?string
     {
+        if (!$this->preview) {
+            return null;
+        }
         return $this->path($this->preview);
     }
 
