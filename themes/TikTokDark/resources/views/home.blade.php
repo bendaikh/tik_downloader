@@ -262,10 +262,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const hdDownload = video.downloads[0]; // First download is usually HD
             const size = hdDownload.size ? ` (${hdDownload.size})` : '';
             const encodedUrl = btoa(hdDownload.url);
-            const downloadUrl = '/download?url=' + encodedUrl + '&extension=mp4&type=video';
+            const downloadUrl = '/download?url=' + encodedUrl + '&extension=mp4&type=video&video_id=' + video.id;
             
             linksHtml += `
-                <a href="${downloadUrl}" class="download-link primary">
+                <a href="${downloadUrl}" class="download-link primary" onclick="trackDownload('hd_video', 'HD Video Without Watermark')">
                     <span>📹 Download HD Video Without Watermark${size}</span>
                     <span>⬇️</span>
                 </a>
@@ -275,10 +275,10 @@ document.addEventListener('DOMContentLoaded', function() {
         // MP3 Audio download
         if (video.music && video.music.downloadUrl) {
             const encodedAudioUrl = btoa(video.music.downloadUrl);
-            const audioDownloadUrl = '/download?url=' + encodedAudioUrl + '&extension=mp3&type=audio';
+            const audioDownloadUrl = '/download?url=' + encodedAudioUrl + '&extension=mp3&type=audio&video_id=' + video.id;
             
             linksHtml += `
-                <a href="${audioDownloadUrl}" class="download-link secondary">
+                <a href="${audioDownloadUrl}" class="download-link secondary" onclick="trackDownload('mp3_audio', 'MP3 Audio')">
                     <span>🎵 Download MP3 Audio</span>
                     <span>⬇️</span>
                 </a>
@@ -296,10 +296,10 @@ document.addEventListener('DOMContentLoaded', function() {
         // Add watermark download if available
         if (video.watermark?.url) {
             const encodedWatermarkUrl = btoa(video.watermark.url);
-            const watermarkDownloadUrl = '/download?url=' + encodedWatermarkUrl + '&extension=mp4&type=watermark';
+            const watermarkDownloadUrl = '/download?url=' + encodedWatermarkUrl + '&extension=mp4&type=watermark&video_id=' + video.id;
             
             linksHtml += `
-                <a href="${watermarkDownloadUrl}" class="download-link watermark">
+                <a href="${watermarkDownloadUrl}" class="download-link watermark" onclick="trackDownload('watermark_video', 'Video with Watermark')">
                     <span>💧 Download with Watermark</span>
                     <span>⬇️</span>
                 </a>
@@ -315,6 +315,23 @@ document.addEventListener('DOMContentLoaded', function() {
     function showError(message) {
         errorText.textContent = message;
         errorMessage.style.display = 'block';
+    }
+    
+    // Track download events
+    function trackDownload(type, label) {
+        if (typeof gaTrackDownload === 'function') {
+            gaTrackDownload(window.location.href, label);
+        }
+        
+        // Also track as custom event
+        if (typeof gaTrackEvent === 'function') {
+            gaTrackEvent('download', {
+                'event_category': 'video',
+                'event_label': label,
+                'download_type': type,
+                'value': 1
+            });
+        }
     }
 });
 

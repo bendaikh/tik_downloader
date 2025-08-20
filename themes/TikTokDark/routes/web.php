@@ -16,33 +16,33 @@ Route::get('/', function () {
     $blogPosts = \App\Models\Blog::where('is_published', true)->latest()->take(3)->get();
     
     return view('TikTokDark::home', compact('products', 'blogPosts'));
-})->name('home');
+})->middleware(['web', 'track'])->name('home');
 
 // TikTok video processing
-Route::post('/fetch', FetchController::class)->name('fetch');
+Route::post('/fetch', FetchController::class)->middleware(['web', 'auth.session'])->name('fetch');
 
 // Download functionality
-Route::get('/download', DownloadFileController::class)->name('download');
+Route::get('/download', DownloadFileController::class)->middleware(['web'])->name('download');
 
 // Blog routes
-Route::get('/blog', [BlogController::class, 'index'])->name('blog');
-Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog-post');
+Route::get('/blog', [BlogController::class, 'index'])->middleware(['web', 'track'])->name('blog');
+Route::get('/blog/{slug}', [BlogController::class, 'show'])->middleware(['web', 'track'])->name('blog-post');
 
 // Products routes
-Route::get('/products', [ProductController::class, 'index'])->name('products');
+Route::get('/products', [ProductController::class, 'index'])->middleware(['web', 'track'])->name('products');
 
 // Static pages
-Route::get('/faq', [FaqController::class, 'index'])->name('faq');
-Route::get('/tos', [TosController::class, 'index'])->name('tos');
-Route::get('/privacy', [PrivacyController::class, 'index'])->name('privacy');
+Route::get('/faq', [FaqController::class, 'index'])->middleware(['web', 'track'])->name('faq');
+Route::get('/tos', [TosController::class, 'index'])->middleware(['web', 'track'])->name('tos');
+Route::get('/privacy', [PrivacyController::class, 'index'])->middleware(['web', 'track'])->name('privacy');
 
 // Donation routes
-Route::get('/donate', [DonationController::class, 'show'])->name('donation.show');
-Route::post('/donate', [DonationController::class, 'process'])->name('donation.process');
-Route::get('/donate/success', [DonationController::class, 'success'])->name('donation.success');
-Route::get('/donate/cancel', [DonationController::class, 'cancel'])->name('donation.cancel');
+Route::get('/donate', [DonationController::class, 'show'])->middleware(['web', 'track'])->name('donation.show');
+Route::post('/donate', [DonationController::class, 'process'])->middleware(['web', 'track'])->name('donation.process');
+Route::get('/donate/success', [DonationController::class, 'success'])->middleware(['web', 'track'])->name('donation.success');
+Route::get('/donate/cancel', [DonationController::class, 'cancel'])->middleware(['web', 'track'])->name('donation.cancel');
 
 // Popular videos (if exists)
 Route::get('/popular-videos', function () {
     return view('TikTokDark::popular-videos');
-})->name('popular-videos');
+})->middleware(['web', 'track'])->name('popular-videos');

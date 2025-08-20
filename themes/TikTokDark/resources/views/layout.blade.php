@@ -33,16 +33,22 @@
     <link rel="stylesheet" href="{{ asset('theme-assets/css/app.css') }}">
     @stack('styles')
     
-    <!-- Google Analytics -->
-    @if(config('analytics.enabled') && config('analytics.google_analytics_id'))
-    <script async src="https://www.googletagmanager.com/gtag/js?id={{ config('analytics.google_analytics_id') }}"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', '{{ config('analytics.google_analytics_id') }}');
-    </script>
+    <!-- Analytics Services -->
+    @php
+        $gaService = app(\App\Service\GoogleAnalytics\GoogleAnalyticsService::class);
+        $safariService = app(\App\Service\Safari\SafariService::class);
+    @endphp
+    {!! $gaService->getTrackingCode() !!}
+    {!! $safariService->getTrackingCode() !!}
+    
+    @if(config('search_console.gsc_enabled') && config('search_console.gsc_verification_method') === 'meta_tag' && config('search_console.gsc_meta_tag'))
+        {!! config('search_console.gsc_meta_tag') !!}
     @endif
+    
+    @php
+        $microsoftService = app(\App\Service\MicrosoftServicesService::class);
+    @endphp
+    {!! $microsoftService->getAllScripts() !!}
 </head>
 <body>
     <!-- Header -->
