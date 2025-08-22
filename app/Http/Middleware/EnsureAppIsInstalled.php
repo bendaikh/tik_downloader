@@ -20,6 +20,11 @@ class EnsureAppIsInstalled
      */
     public function handle(Request $request, Closure $next): Response|RedirectResponse
     {
+        // Skip installer routes to prevent redirect loop
+        if ($request->is('install*')) {
+            return $next($request);
+        }
+
         if(!app()->make('app.installed'))
             return redirect()->route('installer.index');
 

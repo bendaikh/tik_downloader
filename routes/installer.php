@@ -13,8 +13,6 @@ Route::prefix('/install')
     ->group(function () {
         Route::view('', 'installer.index')->name('index');
         Route::view('/requirements', 'installer.requirements')->name('requirements');
-        Route::redirect('/verify', '/install/database')->name('license');
-        Route::post('/verify', VerifyPurchaseCodeController::class)->name('license.verify');
         Route::view('/database', 'installer.database')->name('database');
         Route::post('/database', ConfigureDatabaseController::class)->name('database.configure');
         Route::view('/admin', 'installer.admin')->name('admin');
