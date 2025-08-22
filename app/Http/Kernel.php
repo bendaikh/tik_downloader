@@ -41,6 +41,7 @@ class Kernel extends HttpKernel
             \App\Http\Middleware\Localization::class,
             \App\Http\Middleware\TrackVisit::class,
             \App\Http\Middleware\SeoOptimizationMiddleware::class,
+            \App\Http\Middleware\EnsureAppIsInstalled::class,
         ],
         'theme' => [
             \App\Http\Middleware\EnsureAppIsInstalled::class,

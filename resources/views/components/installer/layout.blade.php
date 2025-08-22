@@ -434,11 +434,95 @@
         .finish-form .button {
             margin-top: 1.25rem;
         }
+
+        .progress-steps {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2rem;
+            padding: 0 var(--padding);
+        }
+
+        .progress-step {
+            display: flex;
+            align-items: center;
+            color: var(--color--50);
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .progress-step.active {
+            color: var(--color-primary);
+        }
+
+        .progress-step.completed {
+            color: var(--color-success);
+        }
+
+        .progress-step-number {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 0.5rem;
+            background: var(--color--10);
+            border: 2px solid var(--color--20);
+            font-weight: 700;
+        }
+
+        .progress-step.active .progress-step-number {
+            background: var(--color-primary);
+            border-color: var(--color-primary);
+            color: white;
+        }
+
+        .progress-step.completed .progress-step-number {
+            background: var(--color-success);
+            border-color: var(--color-success);
+            color: white;
+        }
+
+        .progress-step:not(:last-child)::after {
+            content: '';
+            width: 2rem;
+            height: 2px;
+            background: var(--color--20);
+            margin: 0 0.5rem;
+        }
+
+        .progress-step.completed:not(:last-child)::after {
+            background: var(--color-success);
+        }
     </style>
 </head>
 <body>
 <div class="container-wrapper">
     <x-installer.flash/>
+    
+    <div class="progress-steps">
+        <div class="progress-step {{ request()->routeIs('installer.index') ? 'active' : (request()->routeIs('installer.*') ? 'completed' : '') }}">
+            <div class="progress-step-number">1</div>
+            <span>Introduction</span>
+        </div>
+        <div class="progress-step {{ request()->routeIs('installer.requirements') ? 'active' : (request()->routeIs('installer.database') || request()->routeIs('installer.admin') || request()->routeIs('installer.finish') ? 'completed' : '') }}">
+            <div class="progress-step-number">2</div>
+            <span>Requirements</span>
+        </div>
+        <div class="progress-step {{ request()->routeIs('installer.database') ? 'active' : (request()->routeIs('installer.admin') || request()->routeIs('installer.finish') ? 'completed' : '') }}">
+            <div class="progress-step-number">3</div>
+            <span>Database</span>
+        </div>
+        <div class="progress-step {{ request()->routeIs('installer.admin') ? 'active' : (request()->routeIs('installer.finish') ? 'completed' : '') }}">
+            <div class="progress-step-number">4</div>
+            <span>Admin</span>
+        </div>
+        <div class="progress-step {{ request()->routeIs('installer.finish') ? 'active' : '' }}">
+            <div class="progress-step-number">5</div>
+            <span>Finish</span>
+        </div>
+    </div>
+    
     <div class="container">
         <div class="container-content">
             {{$slot}}
