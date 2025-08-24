@@ -9,6 +9,7 @@ use Themes\TikTokDark\Controllers\TosController;
 use Themes\TikTokDark\Controllers\PrivacyController;
 use Themes\TikTokDark\Controllers\DonationController;
 use Themes\TikTokDark\Controllers\FetchController;
+use Themes\TikTokDark\Controllers\PopularVideosController;
 
 // Home page
 Route::get('/', function () {
@@ -42,7 +43,5 @@ Route::post('/donate', [DonationController::class, 'process'])->middleware(['web
 Route::get('/donate/success', [DonationController::class, 'success'])->middleware(['web', 'track'])->name('donation.success');
 Route::get('/donate/cancel', [DonationController::class, 'cancel'])->middleware(['web', 'track'])->name('donation.cancel');
 
-// Popular videos (if exists)
-Route::get('/popular-videos', function () {
-    return view('TikTokDark::popular-videos');
-})->middleware(['web', 'track'])->name('popular-videos');
+// Popular videos
+Route::get('/popular-videos', PopularVideosController::class)->middleware(['web', 'track'])->name('popular-videos');
