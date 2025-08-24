@@ -1,40 +1,60 @@
 <x-theme::layout title="Popular TikTok Videos">
-    <section style="padding: 4rem 0;">
+    <section class="popular-videos-section">
         <div class="container">
-            <h1 class="section-title">Popular Videos</h1>
-            <p class="section-subtitle">Most downloaded TikTok videos on our platform</p>
+            <div class="section-header">
+                <h1 class="section-title">Popular Videos</h1>
+                <p class="section-subtitle">Most downloaded TikTok videos on our platform</p>
+            </div>
             
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 2rem; margin-top: 3rem;">
+            <div class="videos-grid">
                 @forelse($videos as $video)
-                    <div style="background: var(--card-bg); border-radius: 16px; overflow: hidden; border: 1px solid var(--border-color); transition: transform 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'">
-                        @if($video->getCoverUrl())
-                            <img src="{{ $video->getCoverUrl() }}" alt="Video thumbnail" style="width: 100%; height: 200px; object-fit: cover;">
-                        @else
-                            <div style="width: 100%; height: 200px; background: var(--gradient-primary); display: flex; align-items: center; justify-content: center; color: white; font-size: 3rem;">
-                                📹
+                    <div class="video-card">
+                        <div class="video-thumbnail">
+                            @if($video->cover && $video->getCoverUrl())
+                                <img src="{{ $video->getCoverUrl() }}" alt="Video thumbnail" class="thumbnail-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                <div class="thumbnail-placeholder" style="display: none;">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M8 5v14l11-7z"/>
+                                    </svg>
+                                </div>
+                            @else
+                                <div class="thumbnail-placeholder">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M8 5v14l11-7z"/>
+                                    </svg>
+                                </div>
+                            @endif
+                            <div class="video-overlay">
+                                <div class="play-button">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M8 5v14l11-7z"/>
+                                    </svg>
+                                </div>
                             </div>
-                        @endif
+                        </div>
                         
-                        <div style="padding: 1.5rem;">
-                            <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">
-                                {{ Str::limit($video->caption ?: 'TikTok Video', 60) }}
-                            </h3>
+                        <div class="video-content">
+                            <h3 class="video-title">{{ Str::limit($video->username ? '@' . $video->username . ' TikTok Video' : 'TikTok Video', 40) }}</h3>
                             
-                            <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1rem;">
-                                @{{ $video->username ?: 'Unknown' }} • {{ number_format($video->downloads) }} downloads
-                            </p>
+                            <div class="video-meta">
+                                <span class="username">{{ $video->username ?: 'Unknown User' }}</span>
+                                <span class="downloads">{{ number_format($video->downloads) }} downloads</span>
+                            </div>
                             
                             @if($video->url)
-                                <a href="{{ $video->url }}" target="_blank" style="display: inline-block; background: var(--gradient-accent); color: white; padding: 0.5rem 1rem; border-radius: 6px; text-decoration: none; font-weight: 500; font-size: 0.875rem; transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                                <a href="{{ $video->url }}" target="_blank" class="view-original-btn">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/>
+                                    </svg>
                                     View Original
                                 </a>
                             @endif
                         </div>
                     </div>
                 @empty
-                    <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: var(--text-secondary);">
-                        <div style="font-size: 3rem; margin-bottom: 1rem;">📱</div>
-                        <h3 style="font-size: 1.25rem; margin-bottom: 0.5rem;">No videos yet</h3>
+                    <div class="empty-state">
+                        <div class="empty-icon">📱</div>
+                        <h3>No videos yet</h3>
                         <p>Popular videos will appear here as users download them.</p>
                     </div>
                 @endforelse

@@ -1,6 +1,6 @@
 <?php
 
-namespace Themes\TTDown\Controllers;
+namespace Themes\TikTokDark\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Video;
@@ -16,6 +16,6 @@ class PopularVideosController extends Controller
             ->take(15)
             ->get();
 
-        return view('theme::popular-videos', compact('videos'));
+        return view('TikTokDark::popular-videos', compact('videos'));
     }
 }
