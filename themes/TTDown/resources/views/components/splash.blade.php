@@ -144,12 +144,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 </a>
             `;
         } else if (video.downloads && video.downloads.length > 0) {
-            // Fallback: if no MP3 URL available, show that MP3 is not available
+            // Fallback: Extract audio from video
+            const videoUrl = video.downloads[0].url;
+            const extractAudioUrl = '/extract-audio-download?video_url=' + btoa(videoUrl) + '&filename=tiktok-audio';
+            
             linksHtml += `
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: var(--text-muted); color: var(--text-secondary); border-radius: 8px; font-weight: 500; opacity: 0.5;">
-                    <span>🎵 MP3 Audio (Not Available)</span>
-                    <span>❌</span>
-                </div>
+                <a href="${extractAudioUrl}" 
+                   style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: var(--accent-blue); color: white; text-decoration: none; border-radius: 8px; font-weight: 500; transition: transform 0.3s ease; cursor: pointer;"
+                   onmouseover="this.style.transform='scale(1.02)'"
+                   onmouseout="this.style.transform='scale(1)'"
+                   onclick="trackDownload('extracted_audio', 'Extracted MP3 Audio')">
+                    <span>🎵 Extract MP3 Audio from Video</span>
+                    <span>⬇️</span>
+                </a>
             `;
         }
         
