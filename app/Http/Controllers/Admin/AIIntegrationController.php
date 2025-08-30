@@ -7,6 +7,14 @@ use Illuminate\Http\Request;
 
 class AIIntegrationController extends Controller
 {
+    use AdminAccessMiddleware;
+
+    public function __construct()
+    {
+        $this->middleware($this->makeIsAdminMiddleware());
+        $this->middleware($this->makeDemoRestrictionMiddleware());
+    }
+
     /**
      * Display the AI integration settings.
      */

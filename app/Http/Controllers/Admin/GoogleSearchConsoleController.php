@@ -15,6 +15,7 @@ class GoogleSearchConsoleController extends Controller
     public function __construct()
     {
         $this->middleware($this->makeIsAdminMiddleware());
+        $this->middleware($this->makeDemoRestrictionMiddleware());
     }
 
     public function index()
@@ -25,34 +26,27 @@ class GoogleSearchConsoleController extends Controller
     public function update(Request $request)
     {
         $request->validate([
-            'gsc_enabled' => 'boolean',
-            'gsc_verification_method' => 'nullable|string|in:html_file,meta_tag,dns_record',
-            'gsc_meta_tag' => 'nullable|string|max:500',
-            'gsc_html_file_content' => 'nullable|string|max:1000',
-            'gsc_dns_record' => 'nullable|string|max:200',
             'gsc_property_url' => 'nullable|url',
-            'gsc_auto_submit_sitemap' => 'boolean',
-            'gsc_sitemap_url' => 'nullable|url',
+            'gsc_enabled' => 'boolean',
+            'gsc_verification_code' => 'nullable|string|max:255',
+            'gsc_track_search_queries' => 'boolean',
+            'gsc_track_click_through_rate' => 'boolean',
+            'gsc_track_impressions' => 'boolean',
+            'gsc_track_average_position' => 'boolean',
         ]);
 
         /** @var StorableConfig $store */
         $store = app('config.storable');
 
         $settings = [
-            'gsc_enabled' => $request->boolean('gsc_enabled'),
-            'gsc_verification_method' => $request->input('gsc_verification_method'),
-            'gsc_meta_tag' => $request->input('gsc_meta_tag'),
-            'gsc_html_file_content' => $request->input('gsc_html_file_content'),
-            'gsc_dns_record' => $request->input('gsc_dns_record'),
-            'gsc_property_url' => $request->input('gsc_property_url'),
-            'gsc_auto_submit_sitemap' => $request->boolean('gsc_auto_submit_sitemap'),
-            'gsc_sitemap_url' => $request->input('gsc_sitemap_url'),
+            'property_url' => $request->input('gsc_property_url'),
+            'enabled' => $request->boolean('gsc_enabled'),
+            'verification_code' => $request->input('gsc_verification_code'),
+            'track_search_queries' => $request->boolean('gsc_track_search_queries'),
+            'track_click_through_rate' => $request->boolean('gsc_track_click_through_rate'),
+            'track_impressions' => $request->boolean('gsc_track_impressions'),
+            'track_average_position' => $request->boolean('gsc_track_average_position'),
         ];
-
-        // If HTML file verification is selected, create the verification file
-        if ($request->input('gsc_verification_method') === 'html_file' && $request->input('gsc_html_file_content')) {
-            $this->createVerificationFile($request->input('gsc_html_file_content'));
-        }
 
         $store
             ->put('search_console', $settings)

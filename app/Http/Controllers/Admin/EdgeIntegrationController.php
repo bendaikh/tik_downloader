@@ -12,7 +12,8 @@ class EdgeIntegrationController extends Controller
 
     public function __construct()
     {
-        $this->middleware($this->makeIsAdminMiddleware())->except('index');
+        $this->middleware($this->makeIsAdminMiddleware());
+        $this->middleware($this->makeDemoRestrictionMiddleware());
     }
 
     public function index()
@@ -47,36 +48,21 @@ class EdgeIntegrationController extends Controller
 
         // Save Microsoft services settings to config
         $storable->put('services.microsoft', [
-            'bing_webmaster' => [
-                'verification_code' => $verificationCode,
-                'enabled' => $validated['bing_webmaster_enabled'] ?? false,
-            ],
-            'clarity' => [
-                'project_id' => $validated['microsoft_clarity_id'] ?? null,
-                'enabled' => $validated['microsoft_clarity_enabled'] ?? false,
-            ],
-            'ads' => [
-                'tracking_id' => $validated['microsoft_ads_id'] ?? null,
-                'enabled' => $validated['microsoft_ads_enabled'] ?? false,
-            ],
-            'application_insights' => [
-                'instrumentation_key' => $validated['azure_application_insights_key'] ?? null,
-                'enabled' => $validated['azure_application_insights_enabled'] ?? false,
-            ],
+            'bing_webmaster_verification' => $verificationCode,
+            'bing_webmaster_enabled' => $validated['bing_webmaster_enabled'] ?? false,
+            'microsoft_clarity_id' => $validated['microsoft_clarity_id'] ?? null,
+            'microsoft_clarity_enabled' => $validated['microsoft_clarity_enabled'] ?? false,
+            'microsoft_ads_id' => $validated['microsoft_ads_id'] ?? null,
+            'microsoft_ads_enabled' => $validated['microsoft_ads_enabled'] ?? false,
+            'azure_application_insights_key' => $validated['azure_application_insights_key'] ?? null,
+            'azure_application_insights_enabled' => $validated['azure_application_insights_enabled'] ?? false,
         ]);
 
         if (!$storable->save()) {
-            return back()->withInput()->with('message', [
-                'type' => 'error',
-                'content' => 'Failed to save Microsoft services integration settings.',
-            ]);
+            return back()->withInput()->with('error', 'Failed to save Microsoft services settings.');
         }
-
-        session()->flash(
-            'message',
-            ['type' => 'success', 'content' => 'Microsoft services integration settings updated successfully']
-        );
-
-        return back();
+        
+        return redirect()->route('admin.edge-integration')
+            ->with('success', 'Microsoft services settings updated successfully!');
     }
 }
