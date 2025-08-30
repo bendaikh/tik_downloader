@@ -133,11 +133,13 @@ class ConfigureDatabaseController extends Controller
                 
                 'proxies' => 'CREATE TABLE proxies (
                     id bigint unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                    host varchar(255) NOT NULL,
+                    enabled tinyint(1) NOT NULL DEFAULT 1,
+                    protocol varchar(255) NOT NULL,
+                    hostname varchar(255) NOT NULL,
                     port int NOT NULL,
+                    auth tinyint(1) NOT NULL DEFAULT 0,
                     username varchar(255) NULL,
                     password varchar(255) NULL,
-                    is_active tinyint(1) NOT NULL DEFAULT 1,
                     created_at timestamp NULL,
                     updated_at timestamp NULL
                 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci',
@@ -257,6 +259,7 @@ class ConfigureDatabaseController extends Controller
                 '2025_08_16_114615_create_blogs_table',
                 '2025_08_18_000001_create_visits_table',
                 '2025_08_18_000002_create_downloads_table',
+                '2025_08_30_122712_add_enabled_column_to_proxies_table',
             ];
             
             // Clear existing migration records
