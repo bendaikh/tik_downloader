@@ -19,6 +19,12 @@ Route::withoutMiddleware(['locale'])->group(function () {
     Route::get("download", \App\Http\Controllers\DownloadFileController::class)
         ->name("download");
 
+    // Audio extraction routes
+    Route::post('/extract-audio', [\App\Http\Controllers\AudioExtractionController::class, 'extractAudio'])
+        ->name('extract-audio');
+    Route::get('/extract-audio-download', [\App\Http\Controllers\AudioExtractionController::class, 'downloadExtractedAudio'])
+        ->name('extract-audio-download');
+
     // Donation routes
     Route::get('/donate', [\App\Http\Controllers\DonationController::class, 'show'])->name('donation.show');
     Route::post('/donate/create-order', [\App\Http\Controllers\DonationController::class, 'createOrder'])->name('donation.create-order');

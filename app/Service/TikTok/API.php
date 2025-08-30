@@ -34,6 +34,11 @@ class API implements TikTokAPIContract
             $watermark   = $data['wmplay'] ?? null; // With watermark
             $music       = $data['music'] ?? null; // MP3
 
+            // If no music URL from tikwm, try alternative API
+            if (!$music) {
+                $music = $this->tryAlternativeMusicAPI($url);
+            }
+
             return new TikTokVideo([
                 'id'          => $id,
                 'caption'     => $data['title'] ?? null,
@@ -100,5 +105,66 @@ class API implements TikTokAPIContract
             'statistics'  => [],
             'music'       => null,
         ]);
+    }
+
+    /**
+     * Try alternative APIs to get music URL
+     */
+    private function tryAlternativeMusicAPI(string $url): ?string
+    {
+        // Try multiple alternative APIs
+        $apis = [
+            [
+                'url' => 'https://api.tikwm.com/api/',
+                'params' => ['url' => $url, 'hd' => 1],
+                'field' => 'data.music'
+            ],
+            [
+                'url' => 'https://www.tikwm.com/api/',
+                'params' => ['url' => $url, 'hd' => 1],
+                'field' => 'data.music'
+            ],
+            [
+                'url' => 'https://api.tiktokdownloader.org/api/video',
+                'params' => ['url' => $url],
+                'field' => 'audio_url'
+            ],
+            [
+                'url' => 'https://tiktokmate.com/api/video',
+                'params' => ['url' => $url],
+                'field' => 'music_url'
+            ],
+            [
+                'url' => 'https://api.tiktokv.com/api/video',
+                'params' => ['url' => $url],
+                'field' => 'music.url'
+            ]
+        ];
+
+        foreach ($apis as $api) {
+            try {
+                $response = Http::timeout(10)
+                    ->withHeaders([
+                        'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                        'Accept'     => 'application/json',
+                        'Referer'    => 'https://www.tiktok.com/',
+                    ])
+                    ->get($api['url'], $api['params']);
+
+                if ($response->ok()) {
+                    $data = $response->json();
+                    $musicUrl = data_get($data, $api['field']);
+                    
+                    if ($musicUrl && filter_var($musicUrl, FILTER_VALIDATE_URL)) {
+                        return $musicUrl;
+                    }
+                }
+            } catch (\Exception $e) {
+                // Silently fail and try next API
+                continue;
+            }
+        }
+
+        return null;
     }
 }

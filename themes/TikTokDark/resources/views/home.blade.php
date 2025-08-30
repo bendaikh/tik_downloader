@@ -284,12 +284,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 </a>
             `;
         } else if (video.downloads && video.downloads.length > 0) {
-            // Fallback: if no MP3 URL available, show that MP3 is not available
+            // Fallback: Extract audio from video
+            const videoUrl = video.downloads[0].url;
+            const extractAudioUrl = '/extract-audio-download?video_url=' + btoa(videoUrl) + '&filename=tiktok-audio&video_id=' + video.id;
+            
             linksHtml += `
-                <div class="download-link disabled">
-                    <span>🎵 MP3 Audio (Not Available)</span>
-                    <span>❌</span>
-                </div>
+                <a href="${extractAudioUrl}" class="download-link secondary" onclick="trackDownload('extracted_audio', 'Extracted MP3 Audio')">
+                    <span>🎵 Extract MP3 Audio from Video</span>
+                    <span>⬇️</span>
+                </a>
             `;
         }
         
