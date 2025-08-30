@@ -14,7 +14,9 @@ return new class extends Migration
     public function up()
     {
         Schema::table('proxies', function (Blueprint $table) {
-            $table->boolean('enabled')->default(true)->after('id');
+            if (!Schema::hasColumn('proxies', 'enabled')) {
+                $table->boolean('enabled')->default(true)->after('id');
+            }
         });
     }
 
@@ -26,7 +28,9 @@ return new class extends Migration
     public function down()
     {
         Schema::table('proxies', function (Blueprint $table) {
-            $table->dropColumn('enabled');
+            if (Schema::hasColumn('proxies', 'enabled')) {
+                $table->dropColumn('enabled');
+            }
         });
     }
 };
