@@ -25,6 +25,7 @@
         href="{{route('admin.me')}}"
         icon="admin.icon.mini.user"
         text="My Account"
+        :class="auth()->user()->is_demo ? 'demo-restricted' : ''"
     />
     
     <x-admin.nav-dropdown 
@@ -50,36 +51,68 @@
         <x-admin.nav-sub-link
             href="{{route('admin.settings')}}"
             text="General Settings"
+            :class="auth()->user()->is_demo ? 'demo-restricted' : ''"
         />
         <x-admin.nav-sub-link
             href="{{route('admin.payment-settings')}}"
             text="Payment Settings"
+            :class="auth()->user()->is_demo ? 'demo-restricted' : ''"
         />
         <x-admin.nav-sub-link
             href="{{route('admin.google-analytics')}}"
             text="Google Analytics"
+            :class="auth()->user()->is_demo ? 'demo-restricted' : ''"
         />
         <x-admin.nav-sub-link
             href="{{route('admin.google-search-console')}}"
             text="Google Search Console"
+            :class="auth()->user()->is_demo ? 'demo-restricted' : ''"
         />
         <x-admin.nav-sub-link
             href="{{route('admin.safari')}}"
             text="Safari Analytics"
+            :class="auth()->user()->is_demo ? 'demo-restricted' : ''"
         />
         <x-admin.nav-sub-link
             href="{{route('admin.ai-integration')}}"
             text="AI Integration"
+            :class="auth()->user()->is_demo ? 'demo-restricted' : ''"
         />
         <x-admin.nav-sub-link
             href="{{route('admin.edge-integration')}}"
             text="Microsoft Services"
+            :class="auth()->user()->is_demo ? 'demo-restricted' : ''"
         />
         <x-admin.nav-sub-link
             href="{{route('admin.seo-settings')}}"
             text="SEO Settings"
+            :class="auth()->user()->is_demo ? 'demo-restricted' : ''"
         />
     </x-admin.nav-dropdown>
 
     <x-admin.user-dropdown />
 </nav>
+
+@if(auth()->user()->is_demo)
+<style>
+.demo-restricted {
+    position: relative;
+    opacity: 0.7;
+}
+
+.demo-restricted::after {
+    content: "🔒 Demo Restricted";
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.75rem;
+    color: #f59e0b;
+    font-weight: 500;
+}
+
+.demo-restricted:hover::after {
+    content: "🔒 Demo Restricted - Critical settings disabled";
+}
+</style>
+@endif

@@ -34,12 +34,65 @@
     <div class="container">
         <x-admin.navigation />
         <div class="layout-content">
+            @if(auth()->user()->is_demo)
+                <div class="demo-notice-banner">
+                    <div class="demo-notice-content">
+                        <span class="demo-notice-icon">🔒</span>
+                        <div class="demo-notice-text">
+                            <strong>Demo Mode Active</strong>
+                            <span>You are logged in as a demo user. Critical settings like AI integration, payment settings, analytics, and general settings are restricted to prevent unauthorized modifications.</span>
+                        </div>
+                    </div>
+                </div>
+            @endif
             {{$banner ?? ''}}
             <x-admin.flash />
             {{$slot}}
         </div>
     </div>
 </div>
+
+<style>
+.demo-notice-banner {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border: 1px solid #f59e0b;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.1);
+}
+
+.demo-notice-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.demo-notice-icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+}
+
+.demo-notice-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.demo-notice-text strong {
+    color: #92400e;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.demo-notice-text span {
+    color: #78350f;
+    font-size: 0.875rem;
+    line-height: 1.4;
+}
+</style>
+
 @stack('scripts')
 </body>
 </html>

@@ -13,6 +13,7 @@ class PaymentSettingsController extends Controller
     public function __construct()
     {
         $this->middleware($this->makeIsAdminMiddleware());
+        $this->middleware($this->makeDemoRestrictionMiddleware());
     }
 
     public function index()
