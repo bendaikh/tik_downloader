@@ -23,6 +23,10 @@
                 <h3>Current Version</h3>
                 <div class="version-badge">{{ $currentVersion }}</div>
             </div>
+            <div class="current-branch">
+                <h3>Current Branch</h3>
+                <div class="branch-badge">{{ $currentBranch }}</div>
+            </div>
         </div>
 
         <div class="update-sections">
@@ -95,6 +99,7 @@
                                 <div class="update-header">
                                     <div class="update-version">
                                         <span class="version-badge">{{ $update['version'] }}</span>
+                                        <span class="branch-badge">{{ $update['branch'] ?? 'main' }}</span>
                                         <span class="update-date">{{ \Carbon\Carbon::parse($update['date'])->format('M d, Y H:i') }}</span>
                                     </div>
                                 </div>
@@ -149,19 +154,32 @@
             color: white;
         }
 
-        .current-version h3 {
+        .current-version h3,
+        .current-branch h3 {
             margin: 0 0 0.5rem 0;
             font-size: 1.1rem;
             font-weight: 600;
         }
 
-        .version-badge {
+        .version-badge,
+        .branch-badge {
             display: inline-block;
             background: rgba(255, 255, 255, 0.2);
             padding: 0.5rem 1rem;
             border-radius: 0.5rem;
             font-weight: 600;
             font-size: 1.1rem;
+        }
+
+        .update-info {
+            display: flex;
+            gap: 2rem;
+            align-items: flex-start;
+        }
+
+        .current-version,
+        .current-branch {
+            flex: 1;
         }
 
         .update-sections {

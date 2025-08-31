@@ -142,6 +142,10 @@ Route::withoutMiddleware(['locale'])->group(function () {
             Route::get('/update/backups', [\App\Http\Controllers\Admin\UpdateController::class, 'getBackups'])
                 ->name('update.backups');
 
+            // Test route
+            Route::get('/test', [\App\Http\Controllers\Admin\TestController::class, 'index'])
+                ->name('test');
+
             // Live analytics endpoint
             Route::get('/analytics/live', function () {
                 $now = now();

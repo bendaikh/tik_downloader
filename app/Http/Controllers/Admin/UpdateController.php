@@ -15,9 +15,10 @@ class UpdateController extends Controller
     public function index()
     {
         $currentVersion = config('app.version', '1.0.0');
+        $currentBranch = config('app.branch', 'main');
         $updateHistory = $this->getUpdateHistory();
         
-        return view('admin.update', compact('currentVersion', 'updateHistory'));
+        return view('admin.update', compact('currentVersion', 'currentBranch', 'updateHistory'));
     }
 
     public function uploadUpdate(Request $request)
@@ -45,10 +46,10 @@ class UpdateController extends Controller
             $this->extractUpdate($filePath, $extractPath);
 
             // Validate update structure
-            $this->validateUpdateStructure($extractPath);
+            $updateInfo = $this->validateUpdateStructure($extractPath);
 
             // Apply the update
-            $this->applyUpdate($extractPath);
+            $this->applyUpdate($extractPath, $updateInfo);
 
             // Clean up
             File::delete($filePath);
@@ -58,7 +59,7 @@ class UpdateController extends Controller
             $this->runPostUpdateTasks();
 
             return redirect()->route('admin.update')
-                ->with('success', 'Update applied successfully! The application has been updated.');
+                ->with('success', "Update applied successfully! Updated to version {$updateInfo['version']} from branch {$updateInfo['branch']}.");
 
         } catch (Exception $e) {
             // Clean up on error
@@ -109,33 +110,42 @@ class UpdateController extends Controller
             throw new Exception('Invalid update.json file');
         }
 
+        // Validate required fields
+        $requiredFields = ['version', 'branch', 'description'];
+        foreach ($requiredFields as $field) {
+            if (!isset($updateInfo[$field])) {
+                throw new Exception("Missing required field in update.json: {$field}");
+            }
+        }
+
         $currentVersion = config('app.version', '1.0.0');
         if (version_compare($updateInfo['version'], $currentVersion, '<=')) {
             throw new Exception('Update version must be higher than current version');
         }
+
+        return $updateInfo;
     }
 
-    private function applyUpdate($extractPath)
+    private function applyUpdate($extractPath, $updateInfo)
     {
-        $updateInfo = json_decode(File::get($extractPath . 'update.json'), true);
         $filesPath = $extractPath . 'files/';
 
         // Create backup
-        $this->createBackup();
+        $this->createBackup($updateInfo);
 
         // Copy files
         $this->copyFiles($filesPath, base_path());
 
-        // Update version in config
-        $this->updateVersion($updateInfo['version']);
+        // Update version and branch in config
+        $this->updateVersion($updateInfo['version'], $updateInfo['branch']);
 
         // Log update
         $this->logUpdate($updateInfo);
     }
 
-    private function createBackup()
+    private function createBackup($updateInfo)
     {
-        $backupPath = storage_path('app/backups/backup_' . date('Y-m-d_H-i-s') . '.zip');
+        $backupPath = storage_path('app/backups/backup_' . date('Y-m-d_H-i-s') . '_v' . config('app.version', '1.0.0') . '.zip');
         $backupDir = dirname($backupPath);
         
         if (!File::exists($backupDir)) {
@@ -158,7 +168,8 @@ class UpdateController extends Controller
                 // Skip certain directories
                 if (strpos($relativePath, 'vendor/') === 0 ||
                     strpos($relativePath, 'storage/') === 0 ||
-                    strpos($relativePath, 'node_modules/') === 0) {
+                    strpos($relativePath, 'node_modules/') === 0 ||
+                    strpos($relativePath, '.git/') === 0) {
                     continue;
                 }
 
@@ -193,7 +204,7 @@ class UpdateController extends Controller
         }
     }
 
-    private function updateVersion($newVersion)
+    private function updateVersion($newVersion, $newBranch)
     {
         $configPath = config_path('app.php');
         $config = File::get($configPath);
@@ -202,6 +213,13 @@ class UpdateController extends Controller
         $config = preg_replace(
             "/'version'\s*=>\s*['\"][^'\"]*['\"]/",
             "'version' => '{$newVersion}'",
+            $config
+        );
+
+        // Update branch in config
+        $config = preg_replace(
+            "/'branch'\s*=>\s*['\"][^'\"]*['\"]/",
+            "'branch' => '{$newBranch}'",
             $config
         );
 
@@ -224,9 +242,12 @@ class UpdateController extends Controller
 
         $history[] = [
             'version' => $updateInfo['version'],
+            'branch' => $updateInfo['branch'],
             'date' => now()->toISOString(),
             'description' => $updateInfo['description'] ?? '',
             'changes' => $updateInfo['changes'] ?? [],
+            'commit_hash' => $updateInfo['commit_hash'] ?? null,
+            'author' => $updateInfo['author'] ?? null,
         ];
 
         File::put($logPath, json_encode($history, JSON_PRETTY_PRINT));

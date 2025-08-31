@@ -1,57 +1,84 @@
-# TikTok Downloader - Update System Guide
+# Branch-Based Update System Guide
 
-## Overview
+This guide explains how to use the enhanced update system for managing updates from different git branches.
 
-The TikTok Downloader script includes a comprehensive automatic update system that allows buyers to easily update their installations without manual file replacement. This system provides:
+## 🚀 Overview
 
-- **Automatic Updates**: Upload update packages and apply them automatically
-- **Backup Management**: Automatic backups before each update
-- **Update History**: Track all applied updates
-- **Version Control**: Ensure updates are applied in the correct order
-- **Safety Features**: Validation and rollback capabilities
+The update system allows you to:
+- Create update packages from any git branch
+- Upload and apply updates through the admin panel
+- Track update history with branch information
+- Automatically create backups before updates
+- Validate update packages before installation
 
-## For Developers (Script Sellers)
+## 📋 Prerequisites
 
-### Generating Update Packages
+- Git repository with branches
+- PHP 8.0+ with ZIP extension
+- Admin access to the application
 
-Use the built-in Artisan command to generate update packages:
+## 🔧 Workflow
+
+### Step 1: Create a New Branch
 
 ```bash
-# Generate a full update package
-php artisan update:generate 1.1.0 --description="Bug fixes and performance improvements"
+# Create and switch to a new branch
+git checkout -b feature/new-feature
 
-# Generate update with specific changes
-php artisan update:generate 1.2.0 \
-    --description="New features and security updates" \
-    --changes="Added new download format" \
-    --changes="Fixed security vulnerability" \
-    --changes="Improved error handling"
+# Make your changes
+# ... edit files ...
 
-# Generate update with specific files only
-php artisan update:generate 1.1.1 \
-    --description="Hotfix for critical issue" \
-    --files="app/Http/Controllers/DownloadController.php" \
-    --files="resources/views/download.blade.php"
+# Commit your changes
+git add .
+git commit -m "Add new feature"
 
-# Specify custom output directory
-php artisan update:generate 1.3.0 \
-    --description="Major feature update" \
-    --output="/path/to/updates"
+# Push to remote
+git push origin feature/new-feature
 ```
 
-### Update Package Structure
+### Step 2: Generate Update Package
 
-The generated update package will have this structure:
+Use the provided script to create an update package:
+
+```bash
+# Basic usage
+php scripts/create-update-package.php feature/new-feature
+
+# With custom version and description
+php scripts/create-update-package.php feature/new-feature 1.1.0 "New feature implementation"
+
+# The script will:
+# 1. Switch to the target branch
+# 2. Pull latest changes
+# 3. Create update.json with metadata
+# 4. Package files into ZIP
+# 5. Switch back to original branch
+```
+
+### Step 3: Upload and Apply Update
+
+1. Go to **Admin Panel → System Updates**
+2. Upload the generated ZIP file
+3. The system will:
+   - Validate the update package
+   - Create a backup of current version
+   - Apply the update
+   - Update version and branch information
+   - Clear caches and run migrations
+
+## 📁 Update Package Structure
+
+Your update package must have this structure:
 
 ```
-update_v1.1.0_2024-01-15_14-30-25.zip
-├── update.json
-└── files/
+update-package.zip
+├── update.json          # Update metadata
+└── files/              # Application files
     ├── app/
     ├── config/
     ├── resources/
     ├── routes/
-    └── ... (all updated files)
+    └── ... (other directories)
 ```
 
 ### update.json Format
@@ -59,167 +86,230 @@ update_v1.1.0_2024-01-15_14-30-25.zip
 ```json
 {
     "version": "1.1.0",
-    "description": "Bug fixes and performance improvements",
+    "branch": "feature/new-feature",
+    "description": "New feature implementation",
+    "commit_hash": "abc123def456...",
+    "commit_message": "Add new feature",
+    "author": "Your Name",
+    "date": "2024-01-15 10:30:00",
     "changes": [
-        "Fixed download timeout issue",
-        "Improved error handling",
-        "Added new download format"
-    ],
-    "release_date": "2024-01-15T14:30:25.000000Z",
-    "compatibility": {
-        "min_version": "1.0.0",
-        "max_version": "1.1.0"
-    },
-    "requirements": {
-        "php": "8.0.0",
-        "laravel": "9.0.0"
-    }
+        "Added new UI components",
+        "Improved performance",
+        "Fixed bugs"
+    ]
 }
 ```
 
-### Best Practices for Updates
+## 🛠️ Script Usage
 
-1. **Version Numbering**: Use semantic versioning (MAJOR.MINOR.PATCH)
-2. **Descriptive Changes**: Provide clear descriptions of what changed
-3. **Test Updates**: Always test update packages before distribution
-4. **Backward Compatibility**: Ensure updates don't break existing functionality
-5. **Documentation**: Include migration notes if database changes are involved
+### Create Update Package Script
 
-### Distribution
+```bash
+php scripts/create-update-package.php <branch-name> [version] [description]
+```
 
-1. Generate the update package using the Artisan command
-2. Upload the ZIP file to your distribution platform (CodeCanyon, etc.)
-3. Provide clear instructions to buyers on how to apply the update
-4. Include the update package in your documentation
+**Parameters:**
+- `branch-name`: The git branch to create update from (required)
+- `version`: New version number (optional, auto-generated if not provided)
+- `description`: Update description (optional)
 
-## For Buyers (Script Users)
+**Examples:**
 
-### Accessing the Update System
+```bash
+# Create update from feature branch
+php scripts/create-update-package.php feature/new-ui
 
-1. Log in to your admin panel
-2. Navigate to **System Updates** in the sidebar
-3. You'll see the current version and update options
+# Create update with custom version
+php scripts/create-update-package.php feature/new-ui 1.2.0
 
-### Applying Updates
+# Create update with custom version and description
+php scripts/create-update-package.php feature/new-ui 1.2.0 "New UI improvements and bug fixes"
+```
 
-1. **Download the Update Package**: Get the latest update ZIP file from the seller
-2. **Upload the Package**: 
-   - Drag and drop the ZIP file onto the upload area, or
-   - Click to browse and select the file
-3. **Apply the Update**: Click "Upload & Apply Update"
-4. **Wait for Completion**: The system will:
-   - Create a backup of your current installation
-   - Extract and validate the update package
-   - Apply the changes
-   - Clear caches and run migrations
-   - Update the version number
+### What the Script Does
 
-### Update Requirements
+1. **Validates Environment**
+   - Checks if running from git repository
+   - Verifies target branch exists
 
-The update package must:
-- Be a valid ZIP file (max 100MB)
-- Contain `update.json` with version information
-- Contain `files/` directory with updated files
-- Have a version higher than your current version
+2. **Prepares Branch**
+   - Switches to target branch
+   - Pulls latest changes
+   - Gets commit information
 
-### Backup Management
+3. **Generates Metadata**
+   - Auto-generates version if not provided
+   - Creates update.json with all required fields
+   - Includes commit hash, author, and message
 
-- **Automatic Backups**: A backup is created before each update
-- **Download Backups**: You can download previous backups if needed
-- **Backup Location**: Backups are stored in `storage/app/backups/`
+4. **Packages Files**
+   - Excludes unnecessary directories (.git, vendor, storage, etc.)
+   - Creates proper directory structure
+   - Generates ZIP file with timestamp
 
-### Update History
+5. **Cleanup**
+   - Removes temporary files
+   - Switches back to original branch
 
-The system tracks all applied updates with:
-- Version numbers
-- Application dates
-- Descriptions
-- List of changes
+## 🔒 Security Features
 
-### Troubleshooting
+### Automatic Backup
+- Creates backup before each update
+- Backup includes version information
+- Stored in `storage/app/backups/`
 
-#### Update Fails
-- Check that the ZIP file is valid and not corrupted
-- Ensure the version is higher than your current version
-- Verify the update package structure is correct
-- Check server logs for detailed error messages
+### Validation
+- Validates ZIP file integrity
+- Checks update.json structure
+- Ensures version is higher than current
+- Validates required fields
 
-#### Rollback
-If an update causes issues:
-1. Download a backup from the backup management section
-2. Extract the backup to your server
-3. Restore your database if needed
-4. Clear caches: `php artisan cache:clear`
+### Rollback
+- Download previous backups
+- Manual rollback by restoring backup
+- Update history tracking
 
-#### Common Issues
+## 📊 Update History
 
-**"Invalid update structure"**
-- The ZIP file doesn't contain the required `update.json` and `files/` directory
+The system tracks:
+- Version number
+- Branch name
+- Update date and time
+- Description and changes
+- Commit information
+- Author details
 
-**"Version must be higher than current version"**
-- You're trying to apply an older version or the same version
+## 🚨 Important Notes
 
-**"Unable to extract update file"**
-- The ZIP file is corrupted or password-protected
+### Before Creating Updates
 
-**"Update failed"**
-- Check file permissions on your server
-- Ensure sufficient disk space
-- Verify PHP has write permissions to the application directory
+1. **Test Your Changes**
+   - Ensure your branch works correctly
+   - Run tests if available
+   - Test on staging environment
 
-### Security Considerations
+2. **Version Management**
+   - Use semantic versioning (MAJOR.MINOR.PATCH)
+   - Always increment version number
+   - Document breaking changes
 
-- Only download update packages from trusted sources
-- Verify the update package hasn't been tampered with
-- Keep backups before applying any updates
-- Test updates on a staging environment first if possible
+3. **Backup Strategy**
+   - Keep multiple backups
+   - Test backup restoration
+   - Store backups securely
 
-## Technical Details
+### Excluded Directories
 
-### File Locations
+The update package excludes:
+- `.git/` - Git repository data
+- `vendor/` - Composer dependencies
+- `node_modules/` - NPM dependencies
+- `storage/` - Application storage
+- `bootstrap/cache/` - Framework cache
+- Temporary and backup files
 
-- **Update Controller**: `app/Http/Controllers/Admin/UpdateController.php`
-- **Update View**: `resources/views/admin/update.blade.php`
-- **Update Command**: `app/Console/Commands/GenerateUpdatePackage.php`
-- **Backups**: `storage/app/backups/`
-- **Update History**: `storage/app/updates/update_history.json`
-- **Temp Files**: `storage/app/temp/updates/`
+### Post-Update Tasks
 
-### Database Changes
+After update installation:
+- Clear all caches
+- Run database migrations
+- Optimize application
+- Test functionality
 
-The update system doesn't automatically handle database migrations. If your update includes database changes:
+## 🔧 Troubleshooting
 
-1. Include migration files in the update package
-2. The system will run `php artisan migrate --force` after applying files
-3. Document any manual database steps required
+### Common Issues
 
-### Excluded Files
+1. **"Invalid update structure"**
+   - Ensure update.json exists
+   - Check files/ directory structure
+   - Verify ZIP file integrity
 
-The update system automatically excludes:
-- `vendor/` directory
-- `node_modules/` directory
-- `storage/` directory (except specific subdirectories)
-- `.env` file
-- Git files
-- Log files
-- Cache files
+2. **"Version must be higher"**
+   - Increment version number
+   - Check current version in config/app.php
 
-### Performance
+3. **"Missing required field"**
+   - Ensure update.json has all required fields
+   - Check JSON syntax
 
-- Update packages are processed in memory for efficiency
-- Large files are handled in chunks
-- Temporary files are automatically cleaned up
-- Caches are cleared after updates for optimal performance
+4. **"Unable to extract update file"**
+   - Verify ZIP file is not corrupted
+   - Check file permissions
+   - Ensure sufficient disk space
 
-## Support
+### Manual Rollback
 
-If you encounter issues with the update system:
+If update fails:
 
-1. Check the error messages in the admin panel
-2. Review server logs for detailed information
-3. Ensure your server meets the requirements
-4. Contact the script seller for support
+1. Download backup from admin panel
+2. Extract backup to temporary location
+3. Replace application files with backup
+4. Update version in config/app.php
+5. Clear caches and run migrations
 
----
+## 📈 Best Practices
 
-**Note**: Always backup your installation before applying any updates, even though the system creates automatic backups.
+### Development Workflow
+
+1. **Feature Branches**
+   - Create feature branches for new development
+   - Keep branches focused and small
+   - Test thoroughly before creating update
+
+2. **Version Control**
+   - Use meaningful commit messages
+   - Tag releases appropriately
+   - Maintain clean git history
+
+3. **Testing**
+   - Test updates on staging first
+   - Verify all functionality works
+   - Check for breaking changes
+
+### Update Management
+
+1. **Regular Updates**
+   - Schedule regular updates
+   - Keep track of update history
+   - Document all changes
+
+2. **Communication**
+   - Notify users of updates
+   - Document new features
+   - Provide migration guides if needed
+
+3. **Monitoring**
+   - Monitor application after updates
+   - Check error logs
+   - Verify performance
+
+## 🎯 Example Workflow
+
+Here's a complete example workflow:
+
+```bash
+# 1. Create feature branch
+git checkout -b feature/user-dashboard
+git push origin feature/user-dashboard
+
+# 2. Make changes
+# ... edit files ...
+
+# 3. Commit changes
+git add .
+git commit -m "Add user dashboard with analytics"
+git push origin feature/user-dashboard
+
+# 4. Create update package
+php scripts/create-update-package.php feature/user-dashboard 1.1.0 "Add user dashboard with analytics"
+
+# 5. Upload through admin panel
+# Go to Admin → System Updates → Upload the generated ZIP file
+
+# 6. Verify update
+# Check that new features work correctly
+# Monitor for any issues
+```
+
+This system provides a robust, secure, and user-friendly way to manage updates from different branches while maintaining full control over the update process.
