@@ -28,6 +28,13 @@
         :class="auth()->user()->is_demo ? 'demo-restricted' : ''"
     />
     
+    <x-admin.nav-link
+        href="{{route('admin.update')}}"
+        icon="admin.icon.mini.download"
+        text="System Updates"
+        :class="auth()->user()->is_demo ? 'demo-restricted' : ''"
+    />
+    
     <x-admin.nav-dropdown 
         text="Blog Posts" 
         icon="admin.icon.mini.edit"

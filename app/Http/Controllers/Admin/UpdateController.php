@@ -1,0 +1,293 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Artisan;
+use ZipArchive;
+use Exception;
+
+class UpdateController extends Controller
+{
+    public function index()
+    {
+        $currentVersion = config('app.version', '1.0.0');
+        $updateHistory = $this->getUpdateHistory();
+        
+        return view('admin.update', compact('currentVersion', 'updateHistory'));
+    }
+
+    public function uploadUpdate(Request $request)
+    {
+        $request->validate([
+            'update_file' => 'required|file|mimes:zip|max:102400', // 100MB max
+        ]);
+
+        try {
+            $file = $request->file('update_file');
+            $tempPath = storage_path('app/temp/updates/');
+            
+            // Create temp directory if it doesn't exist
+            if (!File::exists($tempPath)) {
+                File::makeDirectory($tempPath, 0755, true);
+            }
+
+            // Store the uploaded file
+            $fileName = 'update_' . time() . '.zip';
+            $filePath = $tempPath . $fileName;
+            $file->move($tempPath, $fileName);
+
+            // Extract and validate the update
+            $extractPath = $tempPath . 'extracted_' . time() . '/';
+            $this->extractUpdate($filePath, $extractPath);
+
+            // Validate update structure
+            $this->validateUpdateStructure($extractPath);
+
+            // Apply the update
+            $this->applyUpdate($extractPath);
+
+            // Clean up
+            File::delete($filePath);
+            File::deleteDirectory($extractPath);
+
+            // Run post-update tasks
+            $this->runPostUpdateTasks();
+
+            return redirect()->route('admin.update')
+                ->with('success', 'Update applied successfully! The application has been updated.');
+
+        } catch (Exception $e) {
+            // Clean up on error
+            if (isset($filePath) && File::exists($filePath)) {
+                File::delete($filePath);
+            }
+            if (isset($extractPath) && File::exists($extractPath)) {
+                File::deleteDirectory($extractPath);
+            }
+
+            return redirect()->route('admin.update')
+                ->with('error', 'Update failed: ' . $e->getMessage());
+        }
+    }
+
+    private function extractUpdate($zipPath, $extractPath)
+    {
+        $zip = new ZipArchive();
+        
+        if ($zip->open($zipPath) !== true) {
+            throw new Exception('Unable to open update file');
+        }
+
+        if (!$zip->extractTo($extractPath)) {
+            $zip->close();
+            throw new Exception('Unable to extract update file');
+        }
+
+        $zip->close();
+    }
+
+    private function validateUpdateStructure($extractPath)
+    {
+        $requiredFiles = [
+            'update.json',
+            'files/',
+        ];
+
+        foreach ($requiredFiles as $file) {
+            if (!File::exists($extractPath . $file)) {
+                throw new Exception("Invalid update structure. Missing: {$file}");
+            }
+        }
+
+        // Validate update.json
+        $updateInfo = json_decode(File::get($extractPath . 'update.json'), true);
+        if (!$updateInfo || !isset($updateInfo['version'])) {
+            throw new Exception('Invalid update.json file');
+        }
+
+        $currentVersion = config('app.version', '1.0.0');
+        if (version_compare($updateInfo['version'], $currentVersion, '<=')) {
+            throw new Exception('Update version must be higher than current version');
+        }
+    }
+
+    private function applyUpdate($extractPath)
+    {
+        $updateInfo = json_decode(File::get($extractPath . 'update.json'), true);
+        $filesPath = $extractPath . 'files/';
+
+        // Create backup
+        $this->createBackup();
+
+        // Copy files
+        $this->copyFiles($filesPath, base_path());
+
+        // Update version in config
+        $this->updateVersion($updateInfo['version']);
+
+        // Log update
+        $this->logUpdate($updateInfo);
+    }
+
+    private function createBackup()
+    {
+        $backupPath = storage_path('app/backups/backup_' . date('Y-m-d_H-i-s') . '.zip');
+        $backupDir = dirname($backupPath);
+        
+        if (!File::exists($backupDir)) {
+            File::makeDirectory($backupDir, 0755, true);
+        }
+
+        $zip = new ZipArchive();
+        $zip->open($backupPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+
+        $files = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator(base_path()),
+            \RecursiveIteratorIterator::LEAVES_ONLY
+        );
+
+        foreach ($files as $file) {
+            if (!$file->isDir()) {
+                $filePath = $file->getRealPath();
+                $relativePath = substr($filePath, strlen(base_path()) + 1);
+                
+                // Skip certain directories
+                if (strpos($relativePath, 'vendor/') === 0 ||
+                    strpos($relativePath, 'storage/') === 0 ||
+                    strpos($relativePath, 'node_modules/') === 0) {
+                    continue;
+                }
+
+                $zip->addFile($filePath, $relativePath);
+            }
+        }
+
+        $zip->close();
+    }
+
+    private function copyFiles($sourcePath, $destinationPath)
+    {
+        $files = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($sourcePath),
+            \RecursiveIteratorIterator::LEAVES_ONLY
+        );
+
+        foreach ($files as $file) {
+            if (!$file->isDir()) {
+                $filePath = $file->getRealPath();
+                $relativePath = substr($filePath, strlen($sourcePath));
+                $destPath = $destinationPath . $relativePath;
+
+                // Create directory if it doesn't exist
+                $destDir = dirname($destPath);
+                if (!File::exists($destDir)) {
+                    File::makeDirectory($destDir, 0755, true);
+                }
+
+                File::copy($filePath, $destPath);
+            }
+        }
+    }
+
+    private function updateVersion($newVersion)
+    {
+        $configPath = config_path('app.php');
+        $config = File::get($configPath);
+        
+        // Update version in config
+        $config = preg_replace(
+            "/'version'\s*=>\s*['\"][^'\"]*['\"]/",
+            "'version' => '{$newVersion}'",
+            $config
+        );
+
+        File::put($configPath, $config);
+    }
+
+    private function logUpdate($updateInfo)
+    {
+        $logPath = storage_path('app/updates/update_history.json');
+        $logDir = dirname($logPath);
+        
+        if (!File::exists($logDir)) {
+            File::makeDirectory($logDir, 0755, true);
+        }
+
+        $history = [];
+        if (File::exists($logPath)) {
+            $history = json_decode(File::get($logPath), true) ?: [];
+        }
+
+        $history[] = [
+            'version' => $updateInfo['version'],
+            'date' => now()->toISOString(),
+            'description' => $updateInfo['description'] ?? '',
+            'changes' => $updateInfo['changes'] ?? [],
+        ];
+
+        File::put($logPath, json_encode($history, JSON_PRETTY_PRINT));
+    }
+
+    private function runPostUpdateTasks()
+    {
+        // Clear caches
+        Artisan::call('config:clear');
+        Artisan::call('cache:clear');
+        Artisan::call('view:clear');
+        Artisan::call('route:clear');
+
+        // Run migrations if any
+        Artisan::call('migrate', ['--force' => true]);
+
+        // Optimize
+        Artisan::call('optimize');
+    }
+
+    private function getUpdateHistory()
+    {
+        $logPath = storage_path('app/updates/update_history.json');
+        
+        if (File::exists($logPath)) {
+            return json_decode(File::get($logPath), true) ?: [];
+        }
+
+        return [];
+    }
+
+    public function downloadBackup($filename)
+    {
+        $backupPath = storage_path('app/backups/' . $filename);
+        
+        if (!File::exists($backupPath)) {
+            abort(404);
+        }
+
+        return response()->download($backupPath);
+    }
+
+    public function getBackups()
+    {
+        $backupDir = storage_path('app/backups/');
+        $backups = [];
+
+        if (File::exists($backupDir)) {
+            $files = File::files($backupDir);
+            
+            foreach ($files as $file) {
+                if (pathinfo($file, PATHINFO_EXTENSION) === 'zip') {
+                    $backups[] = [
+                        'name' => basename($file),
+                        'size' => File::size($file),
+                        'date' => date('Y-m-d H:i:s', File::lastModified($file)),
+                    ];
+                }
+            }
+        }
+
+        return response()->json($backups);
+    }
+}
