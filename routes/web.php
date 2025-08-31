@@ -132,6 +132,16 @@ Route::withoutMiddleware(['locale'])->group(function () {
             Route::post('/seo-settings/generate-sitemap', [\App\Http\Controllers\Admin\SeoSettingsController::class, 'generateSitemap'])
                 ->name('seo-settings.generate-sitemap');
 
+            // Update routes
+            Route::get('/update', [\App\Http\Controllers\Admin\UpdateController::class, 'index'])
+                ->name('update');
+            Route::post('/update/upload', [\App\Http\Controllers\Admin\UpdateController::class, 'uploadUpdate'])
+                ->name('update.upload');
+            Route::get('/update/backup/{filename}', [\App\Http\Controllers\Admin\UpdateController::class, 'downloadBackup'])
+                ->name('update.backup.download');
+            Route::get('/update/backups', [\App\Http\Controllers\Admin\UpdateController::class, 'getBackups'])
+                ->name('update.backups');
+
             // Live analytics endpoint
             Route::get('/analytics/live', function () {
                 $now = now();
