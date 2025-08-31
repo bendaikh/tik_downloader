@@ -118,7 +118,9 @@ $excludeDirs = [
     'bootstrap/cache',
     'storage/app/temp',
     'storage/app/backups',
-    'storage/app/updates'
+    'storage/app/updates',
+    'database/migrations',  // Exclude migrations to prevent conflicts
+    'database/seeders'      // Exclude seeders as well
 ];
 
 echo "Copying files...\n";

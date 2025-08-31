@@ -32,8 +32,30 @@ git checkout -b feature/new-feature
 git add .
 git commit -m "Add new feature"
 
-# Push to remote
+# Push to remote (optional)
 git push origin feature/new-feature
+```
+
+### Step 2: Generate Update Package
+
+```bash
+# Generate update package from your branch
+scripts/create-update.bat feature/new-feature 1.1.0 "New feature description"
+```
+
+### Step 3: Apply Update
+
+1. Go to **Admin Panel → System Updates**
+2. Upload the generated ZIP file
+3. Click "Upload & Apply Update"
+
+### Step 4: Run Migrations (if needed)
+
+If your update includes database changes, run migrations separately:
+
+```bash
+php artisan migrate --force
+```
 ```
 
 ### Step 2: Generate Update Package

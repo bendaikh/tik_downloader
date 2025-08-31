@@ -23,6 +23,10 @@ class UpdateController extends Controller
 
     public function uploadUpdate(Request $request)
     {
+        // Increase execution time for large updates
+        set_time_limit(300); // 5 minutes
+        ini_set('memory_limit', '512M');
+        
         $request->validate([
             'update_file' => 'required|file|mimes:zip|max:102400', // 100MB max
         ]);
@@ -48,8 +52,8 @@ class UpdateController extends Controller
             // Validate update structure
             $updateInfo = $this->validateUpdateStructure($extractPath);
 
-            // Apply the update
-            $this->applyUpdate($extractPath, $updateInfo);
+                    // Apply the update
+        $this->applyUpdate($extractPath, $updateInfo, $request->has('create_backup'));
 
             // Clean up
             File::delete($filePath);
@@ -126,12 +130,14 @@ class UpdateController extends Controller
         return $updateInfo;
     }
 
-    private function applyUpdate($extractPath, $updateInfo)
+    private function applyUpdate($extractPath, $updateInfo, $createBackup = true)
     {
         $filesPath = $extractPath . 'files/';
 
-        // Create backup
-        $this->createBackup($updateInfo);
+        // Create backup if requested
+        if ($createBackup) {
+            $this->createBackup($updateInfo);
+        }
 
         // Copy files
         $this->copyFiles($filesPath, base_path());
@@ -145,39 +151,96 @@ class UpdateController extends Controller
 
     private function createBackup($updateInfo)
     {
-        $backupPath = storage_path('app/backups/backup_' . date('Y-m-d_H-i-s') . '_v' . config('app.version', '1.0.0') . '.zip');
-        $backupDir = dirname($backupPath);
-        
-        if (!File::exists($backupDir)) {
-            File::makeDirectory($backupDir, 0755, true);
+        try {
+            $backupPath = storage_path('app/backups/backup_' . date('Y-m-d_H-i-s') . '_v' . config('app.version', '1.0.0') . '.zip');
+            $backupDir = dirname($backupPath);
+            
+            if (!File::exists($backupDir)) {
+                File::makeDirectory($backupDir, 0755, true);
+            }
+
+            $zip = new ZipArchive();
+            if ($zip->open($backupPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+                throw new Exception('Unable to create backup ZIP file');
+            }
+
+            // Only backup essential files and directories
+            $essentialDirs = [
+                'app',
+                'config', 
+                'database',
+                'resources',
+                'routes',
+                'themes',
+                'public',
+                'bootstrap',
+                'artisan',
+                'composer.json',
+                'composer.lock',
+                'package.json',
+                '.env.example'
+            ];
+
+            $excludeDirs = [
+                'vendor',
+                'node_modules',
+                'storage',
+                '.git',
+                'storage/app/temp',
+                'storage/app/backups',
+                'storage/app/updates',
+                'storage/logs',
+                'storage/framework/cache',
+                'storage/framework/sessions',
+                'storage/framework/views'
+            ];
+
+            foreach ($essentialDirs as $dir) {
+                $fullPath = base_path($dir);
+                if (File::exists($fullPath)) {
+                    if (is_dir($fullPath)) {
+                        $this->addDirectoryToZip($zip, $fullPath, $dir, $excludeDirs);
+                    } else {
+                        $zip->addFile($fullPath, $dir);
+                    }
+                }
+            }
+
+            $zip->close();
+            
+        } catch (Exception $e) {
+            // Log backup failure but don't stop the update
+            \Log::warning('Backup creation failed: ' . $e->getMessage());
+            // Continue without backup
         }
+    }
 
-        $zip = new ZipArchive();
-        $zip->open($backupPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
-
+    private function addDirectoryToZip($zip, $dirPath, $relativePath, $excludeDirs)
+    {
         $files = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator(base_path()),
+            new \RecursiveDirectoryIterator($dirPath),
             \RecursiveIteratorIterator::LEAVES_ONLY
         );
 
         foreach ($files as $file) {
             if (!$file->isDir()) {
                 $filePath = $file->getRealPath();
-                $relativePath = substr($filePath, strlen(base_path()) + 1);
+                $fileRelativePath = $relativePath . '/' . substr($filePath, strlen($dirPath) + 1);
                 
-                // Skip certain directories
-                if (strpos($relativePath, 'vendor/') === 0 ||
-                    strpos($relativePath, 'storage/') === 0 ||
-                    strpos($relativePath, 'node_modules/') === 0 ||
-                    strpos($relativePath, '.git/') === 0) {
-                    continue;
+                // Check if file should be excluded
+                $shouldExclude = false;
+                foreach ($excludeDirs as $excludeDir) {
+                    if (strpos($fileRelativePath, $excludeDir) === 0) {
+                        $shouldExclude = true;
+                        break;
+                    }
                 }
-
-                $zip->addFile($filePath, $relativePath);
+                
+                if (!$shouldExclude) {
+                    $zip->addFile($filePath, $fileRelativePath);
+                }
             }
         }
-
-        $zip->close();
     }
 
     private function copyFiles($sourcePath, $destinationPath)
@@ -261,8 +324,8 @@ class UpdateController extends Controller
         Artisan::call('view:clear');
         Artisan::call('route:clear');
 
-        // Run migrations if any
-        Artisan::call('migrate', ['--force' => true]);
+        // Note: Migrations are excluded from update packages to prevent conflicts
+        // Run migrations separately using: php artisan migrate --force
 
         // Optimize
         Artisan::call('optimize');

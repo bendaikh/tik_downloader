@@ -68,7 +68,15 @@
                                 <li>Must contain <code>update.json</code> file with version information</li>
                                 <li>Must contain <code>files/</code> directory with updated files</li>
                                 <li>Version must be higher than current version ({{ $currentVersion }})</li>
+                                <li><strong>Note:</strong> Database migrations are excluded from update packages. Run <code>php artisan migrate --force</code> separately if needed.</li>
                             </ul>
+                        </div>
+
+                        <div class="backup-option">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+                                <input type="checkbox" name="create_backup" value="1" checked style="width: auto;">
+                                <span>Create backup before update (recommended)</span>
+                            </label>
                         </div>
 
                         <div class="form-actions">
