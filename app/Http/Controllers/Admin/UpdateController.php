@@ -287,19 +287,19 @@ class UpdateController extends Controller
                     File::makeDirectory($destDir, 0755, true);
                 }
 
-                // Copy file with error handling and proper encoding preservation
+                // Copy file with robust error handling and proper encoding preservation
                 try {
-                    // Read file content with proper encoding
-                    $content = file_get_contents($filePath);
-                    if ($content !== false) {
-                        // Write content with UTF-8 encoding
-                        if (file_put_contents($destPath, $content) !== false) {
+                    // Use File::copy() as primary method
+                    if (File::copy($filePath, $destPath)) {
+                        $copiedFiles[] = $relativePath;
+                    } else {
+                        // Fallback to manual copy if File::copy fails
+                        $content = file_get_contents($filePath);
+                        if ($content !== false && file_put_contents($destPath, $content) !== false) {
                             $copiedFiles[] = $relativePath;
                         } else {
-                            $failedFiles[] = $relativePath;
+                            $failedFiles[] = $relativePath . ' (Copy failed)';
                         }
-                    } else {
-                        $failedFiles[] = $relativePath;
                     }
                 } catch (Exception $e) {
                     $failedFiles[] = $relativePath . ' (Error: ' . $e->getMessage() . ')';
@@ -323,6 +323,20 @@ class UpdateController extends Controller
         foreach ($criticalFiles as $criticalFile) {
             if (in_array($criticalFile, $failedFiles)) {
                 throw new Exception("Failed to copy critical file: {$criticalFile}");
+            }
+        }
+
+        // Verify critical files were actually copied and have content
+        foreach ($criticalFiles as $criticalFile) {
+            $destCriticalPath = $destinationPath . $criticalFile;
+            if (File::exists($destCriticalPath)) {
+                $fileSize = File::size($destCriticalPath);
+                if ($fileSize === 0) {
+                    throw new Exception("Critical file was copied but is empty: {$criticalFile}");
+                }
+                \Log::info("Critical file verified: {$criticalFile} (size: {$fileSize} bytes)");
+            } else {
+                throw new Exception("Critical file was not copied: {$criticalFile}");
             }
         }
     }
@@ -378,17 +392,21 @@ class UpdateController extends Controller
 
     private function runPostUpdateTasks()
     {
-        // Clear caches
+        // Clear all caches to ensure changes are visible
         Artisan::call('config:clear');
         Artisan::call('cache:clear');
         Artisan::call('view:clear');
         Artisan::call('route:clear');
+        Artisan::call('clear-compiled');
 
         // Note: Migrations are excluded from update packages to prevent conflicts
         // Run migrations separately using: php artisan migrate --force
 
         // Optimize
         Artisan::call('optimize');
+
+        // Log post-update tasks completion
+        \Log::info('Post-update tasks completed successfully');
     }
 
     private function getUpdateHistory()
