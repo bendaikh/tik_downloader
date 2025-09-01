@@ -22,6 +22,13 @@
         text="Products"
     />
     
+    <!-- Test Element for Branch Testing -->
+    <x-admin.nav-link
+        href="{{route('admin.test')}}"
+        icon="admin.icon.mini.test"
+        text="Test"
+    />
+    
     <x-admin.nav-link
         href="{{route('admin.me')}}"
         icon="admin.icon.mini.user"

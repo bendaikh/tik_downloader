@@ -287,10 +287,17 @@ class UpdateController extends Controller
                     File::makeDirectory($destDir, 0755, true);
                 }
 
-                // Copy file with error handling
+                // Copy file with error handling and proper encoding preservation
                 try {
-                    if (File::copy($filePath, $destPath)) {
-                        $copiedFiles[] = $relativePath;
+                    // Read file content with proper encoding
+                    $content = file_get_contents($filePath);
+                    if ($content !== false) {
+                        // Write content with UTF-8 encoding
+                        if (file_put_contents($destPath, $content) !== false) {
+                            $copiedFiles[] = $relativePath;
+                        } else {
+                            $failedFiles[] = $relativePath;
+                        }
                     } else {
                         $failedFiles[] = $relativePath;
                     }
