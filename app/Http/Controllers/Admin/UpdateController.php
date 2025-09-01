@@ -134,6 +134,13 @@ class UpdateController extends Controller
     {
         $filesPath = $extractPath . 'files/';
 
+        \Log::info('Starting update application', [
+            'version' => $updateInfo['version'],
+            'branch' => $updateInfo['branch'],
+            'filesPath' => $filesPath,
+            'basePath' => base_path()
+        ]);
+
         // Create backup if requested
         if ($createBackup) {
             $this->createBackup($updateInfo);
@@ -147,6 +154,11 @@ class UpdateController extends Controller
 
         // Log update
         $this->logUpdate($updateInfo);
+
+        \Log::info('Update application completed successfully', [
+            'version' => $updateInfo['version'],
+            'branch' => $updateInfo['branch']
+        ]);
     }
 
     private function createBackup($updateInfo)
@@ -245,10 +257,23 @@ class UpdateController extends Controller
 
     private function copyFiles($sourcePath, $destinationPath)
     {
+        // Ensure source path exists and is a directory
+        if (!File::exists($sourcePath) || !is_dir($sourcePath)) {
+            throw new Exception("Source path does not exist or is not a directory: {$sourcePath}");
+        }
+
+        // Ensure destination path exists
+        if (!File::exists($destinationPath)) {
+            File::makeDirectory($destinationPath, 0755, true);
+        }
+
         $files = new \RecursiveIteratorIterator(
             new \RecursiveDirectoryIterator($sourcePath),
             \RecursiveIteratorIterator::LEAVES_ONLY
         );
+
+        $copiedFiles = [];
+        $failedFiles = [];
 
         foreach ($files as $file) {
             if (!$file->isDir()) {
@@ -262,7 +287,35 @@ class UpdateController extends Controller
                     File::makeDirectory($destDir, 0755, true);
                 }
 
-                File::copy($filePath, $destPath);
+                // Copy file with error handling
+                try {
+                    if (File::copy($filePath, $destPath)) {
+                        $copiedFiles[] = $relativePath;
+                    } else {
+                        $failedFiles[] = $relativePath;
+                    }
+                } catch (Exception $e) {
+                    $failedFiles[] = $relativePath . ' (Error: ' . $e->getMessage() . ')';
+                }
+            }
+        }
+
+        // Log the results
+        \Log::info('Update files copied successfully:', $copiedFiles);
+        if (!empty($failedFiles)) {
+            \Log::warning('Update files failed to copy:', $failedFiles);
+        }
+
+        // If any critical files failed, throw an exception
+        $criticalFiles = [
+            'resources/views/components/admin/navigation.blade.php',
+            'app/Http/Controllers/Admin/TestController.php',
+            'resources/views/admin/test.blade.php'
+        ];
+
+        foreach ($criticalFiles as $criticalFile) {
+            if (in_array($criticalFile, $failedFiles)) {
+                throw new Exception("Failed to copy critical file: {$criticalFile}");
             }
         }
     }
