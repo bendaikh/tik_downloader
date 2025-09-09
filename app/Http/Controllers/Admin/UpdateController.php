@@ -397,6 +397,19 @@ class UpdateController extends Controller
 		Artisan::call('route:clear');
 		Artisan::call('clear-compiled');
 
+		// Refresh theme public assets in case theme files changed
+		try {
+			Artisan::call('theme:clear-cache');
+			Artisan::call('theme:link');
+		} catch (\Throwable $e) {
+			\Log::warning('Theme refresh failed after update', ['error' => $e->getMessage()]);
+		}
+
+		// Try to reset PHP OPcache if enabled so code changes take effect immediately
+		if (function_exists('opcache_reset')) {
+			@opcache_reset();
+		}
+
 		// Note: Migrations are excluded from update packages to prevent conflicts
 		// Run migrations separately using: php artisan migrate --force
 
