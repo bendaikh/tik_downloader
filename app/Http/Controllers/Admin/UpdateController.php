@@ -316,20 +316,31 @@ class UpdateController extends Controller
 
 				// Copy file with robust error handling and proper encoding preservation
 				try {
+					\Log::info("Attempting to copy file", [
+						'source' => $filePath,
+						'dest' => $destPath,
+						'relative' => $relativePath
+					]);
+					
 					// Use File::copy() as primary method
 					if (File::copy($filePath, $destPath)) {
 						$copiedFiles[] = $relativePath;
+						\Log::info("File copied successfully", ['file' => $relativePath]);
 					} else {
+						\Log::warning("File::copy failed, trying manual copy", ['file' => $relativePath]);
 						// Fallback to manual copy if File::copy fails
 						$content = file_get_contents($filePath);
 						if ($content !== false && file_put_contents($destPath, $content) !== false) {
 							$copiedFiles[] = $relativePath;
+							\Log::info("Manual copy successful", ['file' => $relativePath]);
 						} else {
 							$failedFiles[] = $relativePath . ' (Copy failed)';
+							\Log::error("Manual copy failed", ['file' => $relativePath]);
 						}
 					}
 				} catch (Exception $e) {
 					$failedFiles[] = $relativePath . ' (Error: ' . $e->getMessage() . ')';
+					\Log::error("File copy exception", ['file' => $relativePath, 'error' => $e->getMessage()]);
 				}
 			}
 		}

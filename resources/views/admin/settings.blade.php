@@ -3,7 +3,7 @@
     <div class="content-card card">
         <div class="heading">
             <h2>Settings</h2>
-            <p>Modify the sites Settings</p>
+            <p>Modify the sites Settings - UPDATED VIA TEST BRANCH</p>
         </div>
 
         <form
