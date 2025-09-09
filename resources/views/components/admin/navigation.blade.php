@@ -26,7 +26,7 @@
     <x-admin.nav-link
         href="{{route('admin.test')}}"
         icon="admin.icon.mini.test"
-        text="Test - UPDATED VIA 1.1.9"
+        text="Test"
     />
     
     <x-admin.nav-link

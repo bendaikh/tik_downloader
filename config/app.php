@@ -17,8 +17,8 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
-    'version' => '1.1.9',
-    'branch' => 'test-update',
+    'version' => '1.2.0',
+    'branch' => 'test-migration',
 
     'description' => "TikTok Video Downloader Without watermark! Now you can download TikTok Videos without any restriction. Just paste your TikTok Video Url and download the video.",
     'keywords' => "TikTok, TikTok Downloader, TikTok Video Downloader, Download TikTok Videos, Online TikTok Video Downloader, Download TikTok Videos Without Watermark",

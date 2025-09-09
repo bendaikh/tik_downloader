@@ -2,7 +2,7 @@
     <div class="content-card card">
         <div class="heading">
             <h2>Analytics Dashboard</h2>
-            <p>Overview of your visitors and traffic - PATH FIX TEST</p>
+            <p>Overview of your visitors and traffic</p>
             <form method="GET" action="{{ route('admin.analytics') }}" class="filters">
                 <label for="range">Range</label>
                 <select id="range" name="range" onchange="this.form.submit()">
