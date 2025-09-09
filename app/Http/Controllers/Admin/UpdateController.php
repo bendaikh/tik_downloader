@@ -306,7 +306,7 @@ class UpdateController extends Controller
 				$relativePath = substr($filePath, strlen($sourcePath));
 				// Normalize path separators for cross-platform compatibility
 				$relativePath = str_replace('\\', '/', $relativePath);
-				$destPath = $destinationPath . $relativePath;
+				$destPath = rtrim($destinationPath, '/\\') . DIRECTORY_SEPARATOR . ltrim($relativePath, '/\\');
 
 				// Create directory if it doesn't exist
 				$destDir = dirname($destPath);
