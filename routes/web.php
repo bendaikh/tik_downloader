@@ -137,14 +137,12 @@ Route::withoutMiddleware(['locale'])->group(function () {
                 ->name('update');
             Route::post('/update/upload', [\App\Http\Controllers\Admin\UpdateController::class, 'uploadUpdate'])
                 ->name('update.upload');
+            Route::post('/update/debug-zip', [\App\Http\Controllers\Admin\UpdateController::class, 'debugZipStructure'])
+                ->name('update.debug.zip');
             Route::get('/update/backup/{filename}', [\App\Http\Controllers\Admin\UpdateController::class, 'downloadBackup'])
                 ->name('update.backup.download');
             Route::get('/update/backups', [\App\Http\Controllers\Admin\UpdateController::class, 'getBackups'])
                 ->name('update.backups');
-
-            // Test route
-            Route::get('/test', [\App\Http\Controllers\Admin\TestController::class, 'index'])
-                ->name('test');
 
             // Live analytics endpoint
             Route::get('/analytics/live', function () {

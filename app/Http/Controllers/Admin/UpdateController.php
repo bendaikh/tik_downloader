@@ -87,12 +87,86 @@ class UpdateController extends Controller
 			throw new Exception('Unable to open update file');
 		}
 
-		if (!$zip->extractTo($extractPath)) {
+		// Ensure extraction directory exists and is writable
+		if (!File::exists($extractPath)) {
+			File::makeDirectory($extractPath, 0755, true);
+		}
+		
+		if (!is_writable($extractPath)) {
 			$zip->close();
-			throw new Exception('Unable to extract update file');
+			throw new Exception('Extraction directory is not writable: ' . $extractPath);
+		}
+
+		// Log ZIP contents for debugging
+		$zipEntries = [];
+		for ($i = 0; $i < $zip->numFiles; $i++) {
+			$zipEntries[] = $zip->getNameIndex($i);
+		}
+		\Log::info('ZIP file contents', ['entries' => $zipEntries]);
+
+		// Try extraction with different methods for better compatibility
+		$extractionSuccess = false;
+		
+		// Method 1: Standard extractTo
+		if ($zip->extractTo($extractPath)) {
+			$extractionSuccess = true;
+		} else {
+			\Log::warning('Standard ZIP extraction failed, trying manual extraction');
+			
+			// Method 2: Manual extraction (fallback for problematic ZIP files)
+			try {
+				for ($i = 0; $i < $zip->numFiles; $i++) {
+					$filename = $zip->getNameIndex($i);
+					if ($filename === false) continue;
+					
+					// Skip directory entries
+					if (substr($filename, -1) === '/') {
+						$dirPath = $extractPath . $filename;
+						if (!File::exists($dirPath)) {
+							File::makeDirectory($dirPath, 0755, true);
+						}
+						continue;
+					}
+					
+					// Extract file
+					$filePath = $extractPath . $filename;
+					$fileDir = dirname($filePath);
+					
+					if (!File::exists($fileDir)) {
+						File::makeDirectory($fileDir, 0755, true);
+					}
+					
+					$fileContent = $zip->getFromIndex($i);
+					if ($fileContent !== false) {
+						File::put($filePath, $fileContent);
+					}
+				}
+				$extractionSuccess = true;
+				\Log::info('Manual ZIP extraction completed successfully');
+			} catch (Exception $e) {
+				\Log::error('Manual ZIP extraction failed', ['error' => $e->getMessage()]);
+			}
+		}
+		
+		if (!$extractionSuccess) {
+			$zip->close();
+			throw new Exception('Unable to extract update file to: ' . $extractPath);
 		}
 
 		$zip->close();
+		
+		// Log extracted contents for debugging
+		$extractedContents = [];
+		if (File::exists($extractPath)) {
+			$iterator = new \RecursiveIteratorIterator(
+				new \RecursiveDirectoryIterator($extractPath, \RecursiveDirectoryIterator::SKIP_DOTS),
+				\RecursiveIteratorIterator::SELF_FIRST
+			);
+			foreach ($iterator as $file) {
+				$extractedContents[] = str_replace($extractPath, '', $file->getPathname());
+			}
+		}
+		\Log::info('Extracted contents', ['path' => $extractPath, 'contents' => $extractedContents]);
 	}
 
 	private function validateUpdateStructure($extractPath)
@@ -102,9 +176,49 @@ class UpdateController extends Controller
 			'files/',
 		];
 
+		// Log the actual directory structure for debugging
+		$actualContents = [];
+		if (File::exists($extractPath)) {
+			$iterator = new \RecursiveIteratorIterator(
+				new \RecursiveDirectoryIterator($extractPath, \RecursiveDirectoryIterator::SKIP_DOTS),
+				\RecursiveIteratorIterator::SELF_FIRST
+			);
+			foreach ($iterator as $file) {
+				$relativePath = str_replace($extractPath, '', $file->getPathname());
+				$actualContents[] = ltrim(str_replace('\\', '/', $relativePath), '/');
+			}
+		}
+		\Log::info('Validation - Actual extracted structure', ['contents' => $actualContents]);
+
 		foreach ($requiredFiles as $file) {
-			if (!File::exists($extractPath . $file)) {
-				throw new Exception("Invalid update structure. Missing: {$file}");
+			$fullPath = $extractPath . $file;
+			$exists = File::exists($fullPath);
+			
+			\Log::info('Validation check', [
+				'required' => $file,
+				'full_path' => $fullPath,
+				'exists' => $exists,
+				'is_dir' => $exists ? is_dir($fullPath) : false,
+				'is_file' => $exists ? is_file($fullPath) : false
+			]);
+			
+			if (!$exists) {
+				// Try case-insensitive search for files/ directory (Linux case sensitivity issue)
+				if ($file === 'files/') {
+					$foundAlternative = false;
+					foreach ($actualContents as $content) {
+						if (strtolower($content) === 'files' || strtolower($content) === 'files/') {
+							\Log::warning('Found files directory with different case', ['found' => $content, 'expected' => $file]);
+							$foundAlternative = true;
+							break;
+						}
+					}
+					if (!$foundAlternative) {
+						throw new Exception("Invalid update structure. Missing: {$file}. Found contents: " . implode(', ', $actualContents));
+					}
+				} else {
+					throw new Exception("Invalid update structure. Missing: {$file}. Found contents: " . implode(', ', $actualContents));
+				}
 			}
 		}
 
@@ -506,5 +620,72 @@ class UpdateController extends Controller
 		}
 
 		return response()->json($backups);
+	}
+
+	/**
+	 * Debug method to analyze ZIP file structure
+	 * This can help diagnose extraction issues in production
+	 */
+	public function debugZipStructure(Request $request)
+	{
+		$request->validate([
+			'update_file' => 'required|file|mimes:zip|max:102400',
+		]);
+
+		try {
+			$file = $request->file('update_file');
+			$tempPath = storage_path('app/temp/debug/');
+			
+			// Create temp directory if it doesn't exist
+			if (!File::exists($tempPath)) {
+				File::makeDirectory($tempPath, 0755, true);
+			}
+
+			// Store the uploaded file
+			$fileName = 'debug_' . time() . '.zip';
+			$filePath = $tempPath . $fileName;
+			$file->move($tempPath, $fileName);
+
+			$zip = new ZipArchive();
+			$result = $zip->open($filePath);
+			
+			if ($result !== true) {
+				File::delete($filePath);
+				return response()->json([
+					'error' => 'Unable to open ZIP file',
+					'code' => $result
+				], 400);
+			}
+
+			$zipEntries = [];
+			for ($i = 0; $i < $zip->numFiles; $i++) {
+				$zipEntries[] = [
+					'index' => $i,
+					'name' => $zip->getNameIndex($i),
+					'size' => $zip->statIndex($i)['size'] ?? 0,
+					'compressed_size' => $zip->statIndex($i)['comp_size'] ?? 0,
+					'is_dir' => substr($zip->getNameIndex($i), -1) === '/'
+				];
+			}
+
+			$zip->close();
+			File::delete($filePath);
+
+			return response()->json([
+				'total_files' => $zip->numFiles,
+				'entries' => $zipEntries,
+				'has_update_json' => in_array('update.json', array_column($zipEntries, 'name')),
+				'has_files_dir' => in_array('files/', array_column($zipEntries, 'name')),
+				'php_version' => PHP_VERSION,
+				'zip_extension' => extension_loaded('zip') ? 'loaded' : 'not loaded',
+				'os' => PHP_OS,
+				'path_separator' => DIRECTORY_SEPARATOR
+			]);
+
+		} catch (Exception $e) {
+			return response()->json([
+				'error' => $e->getMessage()
+			], 500);
+		}
 	}
 }
