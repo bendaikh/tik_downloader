@@ -108,48 +108,66 @@ class UpdateController extends Controller
 		}
 		\Log::info('ZIP file contents', ['entries' => $zipEntries]);
 
-		// Try extraction with different methods for better compatibility
+		// Always use manual extraction for better control and debugging
 		$extractionSuccess = false;
+		$extractedFiles = [];
+		$failedFiles = [];
 		
-		// Method 1: Standard extractTo
-		if ($zip->extractTo($extractPath)) {
-			$extractionSuccess = true;
-		} else {
-			\Log::warning('Standard ZIP extraction failed, trying manual extraction');
+		try {
+			\Log::info('Starting manual ZIP extraction');
 			
-			// Method 2: Manual extraction (fallback for problematic ZIP files)
-			try {
-				for ($i = 0; $i < $zip->numFiles; $i++) {
-					$filename = $zip->getNameIndex($i);
-					if ($filename === false) continue;
-					
-					// Skip directory entries
-					if (substr($filename, -1) === '/') {
-						$dirPath = $extractPath . $filename;
-						if (!File::exists($dirPath)) {
-							File::makeDirectory($dirPath, 0755, true);
-						}
-						continue;
+			for ($i = 0; $i < $zip->numFiles; $i++) {
+				$filename = $zip->getNameIndex($i);
+				if ($filename === false) continue;
+				
+				\Log::info('Processing ZIP entry', ['index' => $i, 'filename' => $filename]);
+				
+				// Skip directory entries
+				if (substr($filename, -1) === '/') {
+					$dirPath = $extractPath . $filename;
+					if (!File::exists($dirPath)) {
+						File::makeDirectory($dirPath, 0755, true);
+						\Log::info('Created directory', ['path' => $dirPath]);
 					}
-					
-					// Extract file
-					$filePath = $extractPath . $filename;
-					$fileDir = dirname($filePath);
-					
-					if (!File::exists($fileDir)) {
-						File::makeDirectory($fileDir, 0755, true);
-					}
-					
-					$fileContent = $zip->getFromIndex($i);
-					if ($fileContent !== false) {
-						File::put($filePath, $fileContent);
-					}
+					continue;
 				}
-				$extractionSuccess = true;
-				\Log::info('Manual ZIP extraction completed successfully');
-			} catch (Exception $e) {
-				\Log::error('Manual ZIP extraction failed', ['error' => $e->getMessage()]);
+				
+				// Extract file
+				$filePath = $extractPath . $filename;
+				$fileDir = dirname($filePath);
+				
+				if (!File::exists($fileDir)) {
+					File::makeDirectory($fileDir, 0755, true);
+					\Log::info('Created directory for file', ['dir' => $fileDir]);
+				}
+				
+				$fileContent = $zip->getFromIndex($i);
+				if ($fileContent !== false) {
+					if (File::put($filePath, $fileContent) !== false) {
+						$extractedFiles[] = $filename;
+						\Log::info('Extracted file successfully', ['file' => $filename, 'size' => strlen($fileContent)]);
+					} else {
+						$failedFiles[] = $filename . ' (write failed)';
+						\Log::error('Failed to write file', ['file' => $filename]);
+					}
+				} else {
+					$failedFiles[] = $filename . ' (read failed)';
+					\Log::error('Failed to read file from ZIP', ['file' => $filename]);
+				}
 			}
+			
+			$extractionSuccess = true;
+			\Log::info('Manual ZIP extraction completed', [
+				'success' => true,
+				'extracted_files' => count($extractedFiles),
+				'failed_files' => count($failedFiles),
+				'extracted' => $extractedFiles,
+				'failed' => $failedFiles
+			]);
+			
+		} catch (Exception $e) {
+			\Log::error('Manual ZIP extraction failed', ['error' => $e->getMessage()]);
+			$extractionSuccess = false;
 		}
 		
 		if (!$extractionSuccess) {
