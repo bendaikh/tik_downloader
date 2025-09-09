@@ -178,6 +178,7 @@ class UpdateController extends Controller
 
 		// Log the actual directory structure for debugging
 		$actualContents = [];
+		$rootLevelContents = [];
 		if (File::exists($extractPath)) {
 			$iterator = new \RecursiveIteratorIterator(
 				new \RecursiveDirectoryIterator($extractPath, \RecursiveDirectoryIterator::SKIP_DOTS),
@@ -185,10 +186,22 @@ class UpdateController extends Controller
 			);
 			foreach ($iterator as $file) {
 				$relativePath = str_replace($extractPath, '', $file->getPathname());
-				$actualContents[] = ltrim(str_replace('\\', '/', $relativePath), '/');
+				$cleanPath = ltrim(str_replace('\\', '/', $relativePath), '/');
+				$actualContents[] = $cleanPath;
+				
+				// Also track root level contents
+				$pathParts = explode('/', $cleanPath);
+				if (count($pathParts) > 0) {
+					$rootLevelContents[] = $pathParts[0];
+				}
 			}
 		}
-		\Log::info('Validation - Actual extracted structure', ['contents' => $actualContents]);
+		$rootLevelContents = array_unique($rootLevelContents);
+		
+		\Log::info('Validation - Actual extracted structure', [
+			'all_contents' => $actualContents,
+			'root_level' => $rootLevelContents
+		]);
 
 		foreach ($requiredFiles as $file) {
 			$fullPath = $extractPath . $file;
@@ -206,18 +219,34 @@ class UpdateController extends Controller
 				// Try case-insensitive search for files/ directory (Linux case sensitivity issue)
 				if ($file === 'files/') {
 					$foundAlternative = false;
-					foreach ($actualContents as $content) {
-						if (strtolower($content) === 'files' || strtolower($content) === 'files/') {
+					foreach ($rootLevelContents as $content) {
+						if (strtolower($content) === 'files') {
 							\Log::warning('Found files directory with different case', ['found' => $content, 'expected' => $file]);
 							$foundAlternative = true;
 							break;
 						}
 					}
 					if (!$foundAlternative) {
-						throw new Exception("Invalid update structure. Missing: {$file}. Found contents: " . implode(', ', $actualContents));
+						// Check if there are any files that start with 'files/' in the actual contents
+						$hasFilesContent = false;
+						foreach ($actualContents as $content) {
+							if (strpos($content, 'files/') === 0) {
+								$hasFilesContent = true;
+								break;
+							}
+						}
+						
+						if ($hasFilesContent) {
+							\Log::info('Found files content in nested structure, validation passed');
+							$foundAlternative = true;
+						}
+					}
+					
+					if (!$foundAlternative) {
+						throw new Exception("Invalid update structure. Missing: {$file}. Found root contents: " . implode(', ', $rootLevelContents));
 					}
 				} else {
-					throw new Exception("Invalid update structure. Missing: {$file}. Found contents: " . implode(', ', $actualContents));
+					throw new Exception("Invalid update structure. Missing: {$file}. Found root contents: " . implode(', ', $rootLevelContents));
 				}
 			}
 		}
