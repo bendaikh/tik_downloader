@@ -304,6 +304,8 @@ class UpdateController extends Controller
 			if (!$file->isDir()) {
 				$filePath = $file->getRealPath();
 				$relativePath = substr($filePath, strlen($sourcePath));
+				// Normalize path separators for cross-platform compatibility
+				$relativePath = str_replace('\\', '/', $relativePath);
 				$destPath = $destinationPath . $relativePath;
 
 				// Create directory if it doesn't exist
