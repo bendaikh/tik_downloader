@@ -47,6 +47,10 @@ class UpdateController extends Controller
 
 			// Extract and validate the update
 			$extractPath = $tempPath . 'extracted_' . time() . '/';
+			
+			// Debug ZIP structure before extraction
+			$this->analyzeZipStructure($filePath);
+			
 			$this->extractUpdate($filePath, $extractPath);
 
 			// Validate update structure
@@ -157,16 +161,31 @@ class UpdateController extends Controller
 		
 		// Log extracted contents for debugging
 		$extractedContents = [];
+		$rootLevelContents = [];
 		if (File::exists($extractPath)) {
 			$iterator = new \RecursiveIteratorIterator(
 				new \RecursiveDirectoryIterator($extractPath, \RecursiveDirectoryIterator::SKIP_DOTS),
 				\RecursiveIteratorIterator::SELF_FIRST
 			);
 			foreach ($iterator as $file) {
-				$extractedContents[] = str_replace($extractPath, '', $file->getPathname());
+				$relativePath = str_replace($extractPath, '', $file->getPathname());
+				$cleanPath = ltrim(str_replace('\\', '/', $relativePath), '/');
+				$extractedContents[] = $cleanPath;
+				
+				// Track root level contents
+				$pathParts = explode('/', $cleanPath);
+				if (count($pathParts) > 0) {
+					$rootLevelContents[] = $pathParts[0];
+				}
 			}
 		}
-		\Log::info('Extracted contents', ['path' => $extractPath, 'contents' => $extractedContents]);
+		$rootLevelContents = array_unique($rootLevelContents);
+		
+		\Log::info('Extracted contents', [
+			'path' => $extractPath,
+			'all_contents' => $extractedContents,
+			'root_level' => $rootLevelContents
+		]);
 	}
 
 	private function validateUpdateStructure($extractPath)
@@ -768,6 +787,43 @@ class UpdateController extends Controller
 		}
 
 		return response()->json($backups);
+	}
+
+	/**
+	 * Analyze ZIP structure before extraction (internal method)
+	 */
+	private function analyzeZipStructure($zipPath)
+	{
+		$zip = new ZipArchive();
+		$result = $zip->open($zipPath);
+		
+		if ($result !== true) {
+			\Log::error('Unable to open ZIP file for debugging', ['code' => $result]);
+			return;
+		}
+
+		$zipEntries = [];
+		for ($i = 0; $i < $zip->numFiles; $i++) {
+			$zipEntries[] = [
+				'index' => $i,
+				'name' => $zip->getNameIndex($i),
+				'size' => $zip->statIndex($i)['size'] ?? 0,
+				'compressed_size' => $zip->statIndex($i)['comp_size'] ?? 0,
+				'is_dir' => substr($zip->getNameIndex($i), -1) === '/'
+			];
+		}
+
+		$zip->close();
+
+		\Log::info('ZIP file structure analysis', [
+			'total_files' => count($zipEntries),
+			'entries' => $zipEntries,
+			'has_update_json' => in_array('update.json', array_column($zipEntries, 'name')),
+			'has_files_dir' => in_array('files/', array_column($zipEntries, 'name')),
+			'files_with_files_prefix' => array_filter($zipEntries, function($entry) {
+				return strpos($entry['name'], 'files/') === 0;
+			})
+		]);
 	}
 
 	/**
