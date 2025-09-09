@@ -108,6 +108,11 @@ if (!is_dir($tempDir)) {
 	mkdir($tempDir, 0755, true);
 }
 
+// Check for migration files in the changes
+$migrationFiles = array_filter($changedFiles, function($file) {
+	return strpos($file, 'database/migrations/') === 0;
+});
+
 // Create update.json
 $updateJson = [
 	'version' => $version,
@@ -117,11 +122,14 @@ $updateJson = [
 	'commit_message' => $commitMessage,
 	'author' => $author,
 	'date' => date('Y-m-d H:i:s'),
+	'has_migrations' => !empty($migrationFiles),
+	'migration_files' => $migrationFiles,
 	'changes' => [
 		'Updated from branch: ' . $targetBranch,
 		'Base: ' . $baseBranch,
 		'Commit: ' . substr($commitHash, 0, 8),
-		'Message: ' . $commitMessage
+		'Message: ' . $commitMessage,
+		'Database migrations: ' . (empty($migrationFiles) ? 'None' : count($migrationFiles) . ' files')
 	]
 ];
 
@@ -141,8 +149,7 @@ $excludeDirs = [
 	'storage/app/temp',
 	'storage/app/backups',
 	'storage/app/updates',
-	'database/migrations',
-	'database/seeders'
+	// Note: database/migrations and database/seeders are now INCLUDED for automatic migration support
 ];
 
 // Compute diff between base and target

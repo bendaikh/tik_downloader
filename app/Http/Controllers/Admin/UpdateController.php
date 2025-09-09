@@ -423,14 +423,45 @@ class UpdateController extends Controller
 			@opcache_reset();
 		}
 
-		// Note: Migrations are excluded from update packages to prevent conflicts
-		// Run migrations separately using: php artisan migrate --force
+		// Run database migrations if any migration files were included in the update
+		$this->runMigrations();
 
 		// Optimize
 		Artisan::call('optimize');
 
 		// Log post-update tasks completion
 		\Log::info('Post-update tasks completed successfully');
+	}
+
+	private function runMigrations()
+	{
+		try {
+			\Log::info('Checking for pending migrations...');
+			
+			// Check if there are pending migrations
+			$pendingMigrations = Artisan::call('migrate:status');
+			$output = Artisan::output();
+			
+			// Look for pending migrations in the output
+			if (strpos($output, 'Pending') !== false) {
+				\Log::info('Pending migrations found, running migrations...');
+				
+				// Run migrations with force flag (for production)
+				$migrationResult = Artisan::call('migrate', ['--force' => true]);
+				
+				if ($migrationResult === 0) {
+					\Log::info('Database migrations completed successfully');
+				} else {
+					\Log::error('Database migrations failed', ['exit_code' => $migrationResult]);
+				}
+			} else {
+				\Log::info('No pending migrations found');
+			}
+			
+		} catch (\Throwable $e) {
+			\Log::error('Migration execution failed', ['error' => $e->getMessage()]);
+			// Don't throw exception - let the update continue even if migrations fail
+		}
 	}
 
 	private function getUpdateHistory()
