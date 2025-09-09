@@ -278,8 +278,16 @@ class UpdateController extends Controller
 	 */
 	private function findFilesPath($extractPath)
 	{
+		\Log::info('Finding files path', ['extractPath' => $extractPath]);
+
 		// First, try the standard structure: extractPath/files/
 		$standardPath = $extractPath . 'files/';
+		\Log::info('Checking standard path', [
+			'path' => $standardPath,
+			'exists' => File::exists($standardPath),
+			'is_dir' => File::exists($standardPath) ? is_dir($standardPath) : false
+		]);
+
 		if (File::exists($standardPath) && is_dir($standardPath)) {
 			\Log::info('Found files directory at standard path', ['path' => $standardPath]);
 			return $standardPath;
@@ -287,6 +295,7 @@ class UpdateController extends Controller
 
 		// If not found, scan the extracted contents to find where files are located
 		$actualContents = [];
+		$rootLevelContents = [];
 		if (File::exists($extractPath)) {
 			$iterator = new \RecursiveIteratorIterator(
 				new \RecursiveDirectoryIterator($extractPath, \RecursiveDirectoryIterator::SKIP_DOTS),
@@ -296,10 +305,28 @@ class UpdateController extends Controller
 				$relativePath = str_replace($extractPath, '', $file->getPathname());
 				$cleanPath = ltrim(str_replace('\\', '/', $relativePath), '/');
 				$actualContents[] = $cleanPath;
+				
+				// Track root level contents
+				$pathParts = explode('/', $cleanPath);
+				if (count($pathParts) > 0) {
+					$rootLevelContents[] = $pathParts[0];
+				}
 			}
 		}
+		$rootLevelContents = array_unique($rootLevelContents);
 
-		\Log::info('Scanning for files directory', ['contents' => $actualContents]);
+		\Log::info('Scanning for files directory', [
+			'extractPath' => $extractPath,
+			'all_contents' => $actualContents,
+			'root_level' => $rootLevelContents
+		]);
+
+		// Check if there's a 'files' directory at root level
+		if (in_array('files', $rootLevelContents)) {
+			$filesPath = $extractPath . 'files/';
+			\Log::info('Found files directory at root level', ['path' => $filesPath]);
+			return $filesPath;
+		}
 
 		// Look for files that start with 'files/' to determine the structure
 		$filesPrefix = null;
@@ -492,9 +519,34 @@ class UpdateController extends Controller
 
 	private function copyFiles($sourcePath, $destinationPath)
 	{
+		\Log::info('Starting file copy operation', [
+			'sourcePath' => $sourcePath,
+			'destinationPath' => $destinationPath,
+			'sourceExists' => File::exists($sourcePath),
+			'sourceIsDir' => File::exists($sourcePath) ? is_dir($sourcePath) : false
+		]);
+
 		// Ensure source path exists and is a directory
-		if (!File::exists($sourcePath) || !is_dir($sourcePath)) {
-			throw new Exception("Source path does not exist or is not a directory: {$sourcePath}");
+		if (!File::exists($sourcePath)) {
+			// Let's check what actually exists in the parent directory
+			$parentDir = dirname($sourcePath);
+			$parentContents = [];
+			if (File::exists($parentDir)) {
+				$parentContents = File::directories($parentDir);
+			}
+			
+			\Log::error('Source path does not exist', [
+				'sourcePath' => $sourcePath,
+				'parentDir' => $parentDir,
+				'parentExists' => File::exists($parentDir),
+				'parentContents' => $parentContents
+			]);
+			
+			throw new Exception("Source path does not exist: {$sourcePath}. Parent directory contents: " . implode(', ', $parentContents));
+		}
+		
+		if (!is_dir($sourcePath)) {
+			throw new Exception("Source path is not a directory: {$sourcePath}");
 		}
 
 		// Ensure destination path exists
