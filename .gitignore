@@ -9,6 +9,9 @@
 .env
 script-*.zip
 script.zip
+*.zip
+storage/app/temp/*.zip
+storage/app/updates/*.zip
 .env.backup
 .phpunit.result.cache
 Homestead.json
