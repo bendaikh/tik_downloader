@@ -273,15 +273,82 @@ class UpdateController extends Controller
 		return $updateInfo;
 	}
 
+	/**
+	 * Find the correct files path within the extracted update
+	 */
+	private function findFilesPath($extractPath)
+	{
+		// First, try the standard structure: extractPath/files/
+		$standardPath = $extractPath . 'files/';
+		if (File::exists($standardPath) && is_dir($standardPath)) {
+			\Log::info('Found files directory at standard path', ['path' => $standardPath]);
+			return $standardPath;
+		}
+
+		// If not found, scan the extracted contents to find where files are located
+		$actualContents = [];
+		if (File::exists($extractPath)) {
+			$iterator = new \RecursiveIteratorIterator(
+				new \RecursiveDirectoryIterator($extractPath, \RecursiveDirectoryIterator::SKIP_DOTS),
+				\RecursiveIteratorIterator::SELF_FIRST
+			);
+			foreach ($iterator as $file) {
+				$relativePath = str_replace($extractPath, '', $file->getPathname());
+				$cleanPath = ltrim(str_replace('\\', '/', $relativePath), '/');
+				$actualContents[] = $cleanPath;
+			}
+		}
+
+		\Log::info('Scanning for files directory', ['contents' => $actualContents]);
+
+		// Look for files that start with 'files/' to determine the structure
+		$filesPrefix = null;
+		foreach ($actualContents as $content) {
+			if (strpos($content, 'files/') === 0) {
+				$filesPrefix = 'files/';
+				break;
+			}
+		}
+
+		if ($filesPrefix) {
+			// Files are nested under files/ directory
+			$nestedPath = $extractPath . $filesPrefix;
+			\Log::info('Found nested files structure', ['path' => $nestedPath]);
+			return $nestedPath;
+		}
+
+		// If no files/ prefix found, the files might be at the root level
+		// Check if there are application files at the root
+		$hasAppFiles = false;
+		foreach ($actualContents as $content) {
+			$pathParts = explode('/', $content);
+			if (in_array($pathParts[0], ['app', 'config', 'resources', 'routes', 'public'])) {
+				$hasAppFiles = true;
+				break;
+			}
+		}
+
+		if ($hasAppFiles) {
+			\Log::info('Found application files at root level', ['path' => $extractPath]);
+			return $extractPath;
+		}
+
+		// Fallback to standard path and let the error handling deal with it
+		\Log::warning('Could not determine files path, using standard path', ['path' => $standardPath]);
+		return $standardPath;
+	}
+
 	private function applyUpdate($extractPath, $updateInfo, $createBackup = true)
 	{
-		$filesPath = $extractPath . 'files/';
+		// Determine the correct files path based on the actual structure
+		$filesPath = $this->findFilesPath($extractPath);
 
 		\Log::info('Starting update application', [
 			'version' => $updateInfo['version'],
 			'branch' => $updateInfo['branch'],
 			'filesPath' => $filesPath,
-			'basePath' => base_path()
+			'basePath' => base_path(),
+			'extractPath' => $extractPath
 		]);
 
 		// Create backup if requested
